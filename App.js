@@ -2,13 +2,13 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import Carousel from './components/screens/carousel';
-import PreLogin from './components/screens/pre_login';
-import Cadastre from './components/screens/cadastre';
-import Login from './components/screens/login';
-import Redefine from './components/screens/redefine';
-import Verification from './components/screens/verification';
-import Questionnaire from './components/screens/questionnaire';
+import Carousel from './src/screens/carousel';
+import PreLogin from './src/screens/pre_login';
+import Cadastre from './src/screens/cadastre';
+import Login from './src/screens/login';
+import Redefine from './src/screens/redefine';
+import Verification from './src/screens/verification';
+import Questionnaire from './src/screens/questionnaire';
 
 const Stack = createNativeStackNavigator();
 
