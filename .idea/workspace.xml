@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="NONE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="5dc65422-c523-4db1-8e78-65da04a7df45" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+<<<<<<< HEAD
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/alterarfoto.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/alterarfoto.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/dashboard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/dashboard.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/diario.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/diario.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/home.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/home.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/perfil.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/perfil.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/_layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/auth/confirm-code.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/auth/confirm-code.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/auth/login.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/auth/login.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/auth/questionario.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/auth/questionario.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/auth/redefined1.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/auth/redefined1.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/auth/redefined2.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/auth/redefined2.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/auth/registro2.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/auth/registro2.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/auth/verify-code.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/auth/verify-code.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/auth.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/tsconfig.json" afterDir="false" />
+=======
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/dashboard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/dashboard.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/components/cards/grafico.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/cards/grafico.tsx" afterDir="false" />
+>>>>>>> 14498a246866595addac41abc931a26323146089
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 4
+}</component>
+  <component name="ProjectId" id="32i5tnzQTXezvo2ejd5EruqHsvR" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "git-widget-placeholder": "main",
+<<<<<<< HEAD
+    "last_opened_file_path": "C:/Users/aldiv/OneDrive/Desktop/codar/PROJETOS/MindTracking_mobile",
+=======
+    "last_opened_file_path": "C:/Users/SEDUC DEST2/MindTracking_mobile",
+>>>>>>> 14498a246866595addac41abc931a26323146089
+    "settings.editor.selected.configurable": "AndroidSdkUpdater"
+  }
+}]]></component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="5dc65422-c523-4db1-8e78-65da04a7df45" name="Changes" comment="" />
+      <created>1757890770862</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1757890770862</updated>
+    </task>
+    <servers />
+  </component>
+</project>
