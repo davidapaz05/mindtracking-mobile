@@ -2,7 +2,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  Button,
   Dimensions,
   Image,
   LayoutChangeEvent,
@@ -14,7 +13,6 @@ import {
 } from "react-native";
 import {
   AthenaCard,
-  CorrelationsCard,
   ExportarJornadaCard,
   InfoCard,
   StatCard,
@@ -31,6 +29,13 @@ type HistoricoItem = {
   nota_convertida: string;
 };
 
+type CorrelacaoItem = {
+  total_ocorrencias: string;
+  texto_alternativa: string;
+  texto_pergunta: string;
+  pontuacao: number;
+};
+
 export default function Dashboard() {
   const router = useRouter();
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -40,10 +45,14 @@ export default function Dashboard() {
   const [jaRespondido, setJaRespondido] = useState<boolean | null>(null);
   const [pontuacaoMedia, setPontuacaoMedia] = useState<string | null>(null);
   const [dicaAPI, setDicaAPI] = useState<string | null>(null);
+  const [conversasTotal, setConversasTotal] = useState<number | null>(null);
+  const [correlacoes, setCorrelacoes] = useState<CorrelacaoItem[]>([]);
+  const [correlacaoIndex, setCorrelacaoIndex] = useState(0);
 
   const textoPadraoRecomendacao =
     "Bem-vindo à MindTracking! Que tal começar conhecendo mais sobre como está se sentindo hoje?";
 
+  // Carregar ID e token
   useEffect(() => {
     async function loadUserData() {
       const storedId = await AsyncStorage.getItem("usuario_id");
@@ -58,7 +67,6 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchHistorico() {
       if (!usuarioId || !token) return;
-
       try {
         const response = await fetch(
           `http://44.220.11.145/questionario/historico/${usuarioId}`,
@@ -70,7 +78,6 @@ export default function Dashboard() {
             },
           }
         );
-
         const data = await response.json();
         if (data.success) {
           setHistorico(data.historico);
@@ -88,7 +95,6 @@ export default function Dashboard() {
   useEffect(() => {
     async function verificarQuestionarioDiario() {
       if (!usuarioId || !token) return;
-
       try {
         const response = await fetch(
           `http://44.220.11.145/questionario/diario/verificar/${usuarioId}`,
@@ -100,7 +106,6 @@ export default function Dashboard() {
             },
           }
         );
-
         const data = await response.json();
         if (data.success) {
           setJaRespondido(data.ja_respondido);
@@ -118,7 +123,6 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchPontuacaoMedia() {
       if (!usuarioId || !token) return;
-
       try {
         const response = await fetch(
           `http://44.220.11.145/questionario/pontuacao/${usuarioId}`,
@@ -130,7 +134,6 @@ export default function Dashboard() {
             },
           }
         );
-
         const data = await response.json();
         if (data.success && data.nota !== undefined) {
           setPontuacaoMedia(String(data.nota));
@@ -148,7 +151,6 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchDica() {
       if (!token) return;
-
       try {
         const response = await fetch("http://44.220.11.145/api/dica", {
           method: "GET",
@@ -157,9 +159,7 @@ export default function Dashboard() {
             "Content-Type": "application/json",
           },
         });
-
         const data = await response.json();
-
         if (data.success) {
           setDicaAPI(data.dica || textoPadraoRecomendacao);
         } else {
@@ -177,27 +177,118 @@ export default function Dashboard() {
     fetchDica();
   }, [token]);
 
+  // Buscar conversas Athena
+  useEffect(() => {
+    async function fetchConversas() {
+      if (!token) {
+        setConversasTotal(null);
+        return;
+      }
+      try {
+        const response = await fetch("http://44.220.11.145/api/diagnosticos", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && typeof data.total === "number" && data.total > 0) {
+            setConversasTotal(data.total);
+          } else {
+            setConversasTotal(0);
+          }
+        } else {
+          const text = await response.text();
+          console.warn(`Resposta não OK: ${response.status} - ${text}`);
+          setConversasTotal(0);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar total conversas Athena:", error);
+        setConversasTotal(0);
+      }
+    }
+    fetchConversas();
+  }, [token]);
+
+  // Buscar correlações a cada alteração de usuario/token
+  useEffect(() => {
+    async function fetchCorrelacoes() {
+      if (!usuarioId || !token) return;
+      try {
+        const response = await fetch(
+          `http://44.220.11.145/questionario/correlacoes/${usuarioId}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && Array.isArray(data.correlacoes)) {
+            setCorrelacoes(data.correlacoes.slice(0, 4)); // até 4
+            setCorrelacaoIndex(0);
+          } else {
+            setCorrelacoes([]);
+          }
+        } else {
+          console.warn(
+            `Falha ao buscar correlações - status: ${response.status}`
+          );
+          setCorrelacoes([]);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar correlações:", error);
+        setCorrelacoes([]);
+      }
+    }
+    fetchCorrelacoes();
+  }, [usuarioId, token]);
+
+  // Troca automática do índice da correlação a cada 5 segundos
+  useEffect(() => {
+    if (correlacoes.length <= 1) return;
+    const intervalId = setInterval(() => {
+      setCorrelacaoIndex((oldIndex) => (oldIndex + 1) % correlacoes.length);
+    }, 5000);
+    return () => clearInterval(intervalId);
+  }, [correlacoes]);
+
   const onHeaderLayout = (event: LayoutChangeEvent) => {
     const h = event.nativeEvent?.layout?.height ?? 0;
     setHeaderHeight(h);
   };
 
-  // Preparar dados para gráfico - inverter para mais recentes à direita
-  const data = historico
+  // Preparando dados para gráfico
+  const data = historico.slice().reverse().map((item) => Number(item.nota_convertida));
+  const xLabels = historico
     .slice()
     .reverse()
-    .map((item) => Number(item.nota_convertida));
+    .map((item) => {
+      const datePart = item.data.substring(0, 10);
+      const [year, month, day] = datePart.split("-");
+      return `${day}/${month}`;
+    });
 
- const xLabels = historico
-  .slice()
-  .reverse()
-  .map((item) => {
-    // Exemplo: item.data = "2025-10-30T00:00:00.000Z"
-    // Extrair substring do dia e mês
-    const datePart = item.data.substring(0, 10); // "2025-10-30"
-    const [year, month, day] = datePart.split("-");
-    return `${day}/${month}`;
-  });
+  // Correlação atualmente exibida
+  const currentCorrelacao = correlacoes[correlacaoIndex];
+  const correlationItems = currentCorrelacao
+    ? [
+        {
+          icon:
+            currentCorrelacao.pontuacao >= 3
+              ? require("@assets/icons/joiaverde.png")
+              : require("@assets/icons/joiavermelho.png"),
+          color: currentCorrelacao.pontuacao >= 3 ? "#16A34A" : "#E11D48",
+          text: currentCorrelacao.texto_alternativa,
+          questionText: currentCorrelacao.texto_pergunta,
+        },
+      ]
+    : [];
 
   return (
     <View style={styles.container}>
@@ -209,14 +300,11 @@ export default function Dashboard() {
               style={styles.seta}
             />
           </TouchableOpacity>
-
           <View style={styles.textContainer}>
             <Text style={styles.perfilText}>Dashboard</Text>
           </View>
-
           <View style={{ width: width * 0.09 }} />
         </View>
-
         <Text style={styles.titleLarge}>Seu dashboard de clareza</Text>
       </View>
 
@@ -227,35 +315,23 @@ export default function Dashboard() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {jaRespondido === true && (
-          <StatCard
-            title="Questionários respondidos"
-            value={historico.length}
-            deltaSign="up"
-            deltaText="Parabéns continue assim!"
-            icon={require("@assets/icons/clipboard.png")}
-          />
-        )}
-
-        {jaRespondido === false && (
-          <View style={{ marginVertical: 10 }}>
-            <Button
-              title="Responder Questionário Diário"
-              onPress={() => router.push("/auth/questionario")}
-              color="#2E5BFF"
-            />
-          </View>
-        )}
+        <StatCard
+          title="Questionários respondidos"
+          value={historico.length}
+          deltaSign="up"
+          deltaText="Parabéns continue assim!"
+          icon={require("@assets/icons/clipboard.png")}
+        />
 
         <InfoCard
-  title="Estado Emocional Médio"
-  subtitle={
-    pontuacaoMedia
-      ? `Pontuação média: ${pontuacaoMedia}`
-      : "Carregando pontuação..."
-  }
-  icon={require("@assets/icons/grafico.png")}
-/>
+          title="Estado Emocional Médio"
+          subtitle={
+            pontuacaoMedia
+              ? `Pontuação média: ${pontuacaoMedia}`
+              : "Carregando pontuação..."
+          }
+          icon={require("@assets/icons/grafico.png")}
+        />
 
         <InfoCard
           title="Recomendação"
@@ -263,40 +339,81 @@ export default function Dashboard() {
           icon={require("@assets/icons/recomendacao.png")}
         />
 
-        <CorrelationsCard
-          items={[
-            {
-              icon: require("@assets/icons/joiaverde.png"),
-              color: "#16A34A",
-              text: "Dias com 7h+ de sono: 4 dias",
-            },
-            {
-              icon: require("@assets/icons/joiavermelho.png"),
-              color: "#E11D48",
-              text: "Menos ansiedade após 3 dias de diário",
-            },
-            {
-              icon: require("@assets/icons/joiaverde.png"),
-              color: "#16A34A",
-              text: "Dias com alimentação saúdavel: 7 dias ",
-            },
-          ]}
-        />
+        {/* Exibe apenas uma correlação por vez */}
+        {currentCorrelacao && (
+  <View
+    style={{
+      width: "100%",
+      backgroundColor: "#1E293B",
+      borderRadius: 10,
+      padding: 16,
+      marginBottom: height * 0.025,
+      alignItems: "center",
+    }}
+  >
+    <Text
+      style={{
+        color: "#fff",
+        fontSize: 18,
+        fontWeight: "700",
+        marginBottom: 12,
+      }}
+    >
+      Respostas frequentes
+    </Text>
+
+    <Text
+      style={{
+        color: "#94A3B8",
+        fontSize: 16,
+        marginBottom: 8,
+        fontWeight: "600",
+        textAlign: "center",
+      }}
+    >
+      {correlationItems[0].questionText}
+    </Text>
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+      }}
+    >
+      <Image
+        source={correlationItems[0].icon}
+        style={{ width: 24, height: 24 }}
+      />
+      <Text
+        style={{
+          color: correlationItems[0].color,
+          fontSize: 18,
+          fontWeight: "700",
+        }}
+      >
+        {correlationItems[0].text}
+      </Text>
+    </View>
+  </View>
+)}
+
 
         <GraficoCard
           data={data}
           color="#38BDF8"
           title="Seu Bem-Estar Esta Semana"
-          title2="Média e progresso dos últimos questionários"
+          title2="Progresso dos últimos questionários:"
           xLabels={xLabels}
         />
 
         <AthenaCard
           title="Converse com a Athena"
-          description="12 conversas até agora."
-          onPress={() => {
-            /* ação ao clicar, se desejar */
-          }}
+          description={
+            conversasTotal && conversasTotal > 0
+              ? `${conversasTotal} conversas até agora.`
+              : "Que tal conversar com athena¹"
+          }
+          onPress={() => router.push("/(tabs)/ia")}
           testID="athena-card"
         />
 
