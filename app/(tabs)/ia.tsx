@@ -1,29 +1,124 @@
 import CustomButton from "../components/cards/cardIA";
 import InputIA from "../components/common/input/inputIA";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Dimensions, FlatList, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 
 const { width, height } = Dimensions.get("window");
 
-// ... imports inalterados
+// Função para enviar mensagem para o endpoint da API
+const sendMessage = async (msg: string) => {
+  try {
+    const token = await AsyncStorage.getItem("token");
+
+    const response = await fetch("http://44.220.11.145/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ message: msg }),
+    });
+
+    const data = await response.json();
+    console.log("Resposta da API:", data); // Para debugar
+
+    if (data.success) {
+      return data.response;
+    } else {
+      return data.message || "Desculpa, não consegui entender.";
+    }
+  } catch (e) {
+    return "Erro na conexão.";
+  }
+};
+
+type Message = { text: string; from: "user" | "bot" };
+
+// Componente para os três pontinhos animados
+const LoadingDots = () => {
+  const [dotCount, setDotCount] = useState(1);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDotCount((prev) => (prev === 3 ? 1 : prev + 1));
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+  return (
+    <Text style={{ color: '#E2E8F0', fontSize: width * 0.04 }}>
+      {' '.repeat(1)}{'.'.repeat(dotCount)}
+    </Text>
+  );
+};
+
+// Função para renderizar texto formatado com negrito e tópicos
+function renderFormattedText(text: string) {
+  const lines = text.split('\n');
+  return lines.map((line, idx) => {
+    if (line.startsWith('- ')) {
+      return (
+        <View key={idx} style={{ flexDirection: 'row', marginBottom: 2 }}>
+          <Text style={{ color: '#E2E8F0', fontSize: width * 0.04, marginRight: 6 }}>{'\u2022'}</Text>
+          <Text style={{ color: '#E2E8F0', fontSize: width * 0.04, flexShrink: 1 }}>{line.slice(2)}</Text>
+        </View>
+      );
+    }
+    const parts = line.split(/(\*\*[^*]+\*\*)/g);
+    return (
+      <Text key={idx} style={{ color: '#E2E8F0', fontSize: width * 0.04 }}>
+        {parts.map((part, i) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            const content = part.slice(2, -2);
+            return (
+              <Text key={i} style={{ fontWeight: 'bold', color: '#E2E8F0' }}>
+                {content}
+              </Text>
+            );
+          }
+          return part;
+        })}
+      </Text>
+    );
+  });
+}
 
 export default function PreLogin() {
   const router = useRouter();
 
   const [inputValue, setInputValue] = useState("");
-  const [messages, setMessages] = useState<string[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [chatStarted, setChatStarted] = useState(false);
+  const [loading, setLoading] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+  const loadingMsgId = useRef<number | null>(null);
 
-  // Aceita texto opcional para envio programático (cards)
-  const handleSend = (text?: string) => {
+  const handleSend = async (text?: string) => {
     const toSend = (text ?? inputValue).trim();
     if (!toSend) return;
-    setMessages(prev => [...prev, toSend]);
-    setInputValue("");      // não polui o teclado
-    setChatStarted(true);   // força header fixo quando começar
+
+    setMessages(prev => [...prev, { text: toSend, from: "user" }]);
+    setInputValue("");
+    setChatStarted(true);
+
+    setLoading(true);
+    setMessages(prev => {
+      loadingMsgId.current = prev.length;
+      return [...prev, { text: "", from: "bot" }];
+    });
+
+    const reply = await sendMessage(toSend);
+
+    setLoading(false);
+    setMessages(prev => {
+      if (loadingMsgId.current !== null) {
+        const newMessages = [...prev];
+        newMessages[loadingMsgId.current] = { text: reply, from: "bot" };
+        loadingMsgId.current = null;
+        return newMessages;
+      }
+      return [...prev, { text: reply, from: "bot" }];
+    });
   };
 
   useEffect(() => {
@@ -36,7 +131,6 @@ export default function PreLogin() {
 
   return (
     <View style={styles.container}>
-      {/* Header dinâmico igual ao seu */}
       {!isChat ? (
         <View style={styles.topo}>
           <Image source={require("../../assets/icons/logo.png")} style={styles.logo} resizeMode="contain" />
@@ -58,7 +152,6 @@ export default function PreLogin() {
         </View>
       )}
 
-      {/* Cards + Input */}
       {!isChat ? (
         <View style={styles.inferior}>
           <ScrollView
@@ -67,22 +160,10 @@ export default function PreLogin() {
             contentContainerStyle={styles.scrollContent}
             style={styles.cardsScroll}
           >
-            <CustomButton
-              title="O que posso fazer para me sentir melhor hoje?"
-              onPress={() => handleSend("O que posso fazer para me sentir melhor hoje?")}
-            />
-            <CustomButton
-              title="Registrar meu humor"
-              onPress={() => handleSend("Registrar meu humor")}
-            />
-            <CustomButton
-              title="Meditação guiada"
-              onPress={() => handleSend("Meditação guiada")}
-            />
-            <CustomButton
-              title="Exercícios rápidos"
-              onPress={() => handleSend("Exercícios rápidos")}
-            />
+            <CustomButton title="O que posso fazer para me sentir melhor hoje?" onPress={() => handleSend("O que posso fazer para me sentir melhor hoje?")} />
+            <CustomButton title="Registrar meu humor" onPress={() => handleSend("Registrar meu humor")} />
+            <CustomButton title="Meditação guiada" onPress={() => handleSend("Meditação guiada")} />
+            <CustomButton title="Exercícios rápidos" onPress={() => handleSend("Exercícios rápidos")} />
           </ScrollView>
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -97,22 +178,36 @@ export default function PreLogin() {
           </KeyboardAvoidingView>
         </View>
       ) : (
-        <View style={{flex: 1, paddingBottom: height * 0.12, marginTop: height * 0.06}}>
+        <View style={{ flex: 1, paddingBottom: height * 0.12, marginTop: height * 0.06 }}>
           <FlatList
             data={messages}
             keyExtractor={(_, idx) => String(idx)}
             contentContainerStyle={styles.chatContainer}
             style={styles.chatScroll}
             showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => (
-              <View style={styles.messageBubble}>
-                <Text style={styles.messageText}>{item}</Text>
-              </View>
-            )}
-            ListHeaderComponent={<View style={{height: height * 0.06}} />} // Espaço do tamanho do header
-            maintainVisibleContentPosition={{
-              minIndexForVisible: 1,
+            renderItem={({ item }) => {
+              if (item.from === "user") {
+                return (
+                  <View style={[styles.messageBubble, styles.messageBubbleUser, { alignSelf: "flex-end" }]}>
+                    <Text style={[styles.messageText, styles.messageTextUser]}>{item.text}</Text>
+                  </View>
+                );
+              }
+              if (loading && item.text === "") {
+                return (
+                  <View style={[styles.messageBubble, styles.messageBubbleBot, { alignSelf: "flex-start" }]}>
+                    <LoadingDots />
+                  </View>
+                );
+              }
+              return (
+                <View style={[styles.messageBubble, styles.messageBubbleBot, { alignSelf: "flex-start" }]}>
+                  {renderFormattedText(item.text)}
+                </View>
+              );
             }}
+            ListHeaderComponent={<View style={{ height: height * 0.06 }} />}
+            maintainVisibleContentPosition={{ minIndexForVisible: 1 }}
           />
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -250,18 +345,21 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   messageBubble: {
-    backgroundColor: "#29374F",
     borderRadius: 12,
     padding: 10,
     marginVertical: 4,
-    alignSelf: "flex-end",
     maxWidth: "80%",
   },
+  messageBubbleUser: {
+    backgroundColor: "#29374F",
+  },
+  messageBubbleBot: {
+    backgroundColor: "#4A5568",
+  },
   messageText: {
-    color: "#fff",
     fontSize: width * 0.04,
   },
-  input: {
-    marginBottom: height * 0.1,
+  messageTextUser: {
+    color: "#fff",
   },
 });
