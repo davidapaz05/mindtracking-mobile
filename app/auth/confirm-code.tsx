@@ -31,65 +31,84 @@ export default function LoginScreen() {
     );
   };
 
-  const handleVerify = async () => {
-    const email = String(params.email || (await AsyncStorage.getItem("email")) || "");
-    const codigo = code.join("").trim();
-    if (!email || codigo.length === 0) {
-      setError("Preencha o código enviado por email.");
-      return;
-    }
-    setError("");
-    setLoading(true);
-    try {
-      const resp = await verifyEmail(email, codigo);
-      console.log("verify resp:", resp);
-      if (resp && resp.success) {
-        if (resp.token) {
-          await AsyncStorage.setItem("token", String(resp.token));
-        } else {
-          // If backend didn't return a token, try automatic login using senha passed from registration
-          const senhaParam = String(params.senha || params.password || "");
-          if (senhaParam && email) {
-            try {
-              // loginService stores token in AsyncStorage when successful
-              await loginService(email, senhaParam);
-              console.log("Autologin successful after verify");
-            } catch (loginErr) {
-              console.log("Autologin failed after verify:", loginErr);
-            }
+const handleVerify = async () => {
+  const email = String(params.email || (await AsyncStorage.getItem("email")) || "");
+  const codigo = code.join("").trim();
+  if (!email || codigo.length === 0) {
+    setError("Preencha o código enviado por email.");
+    return;
+  }
+  setError("");
+  setLoading(true);
+  try {
+    const resp = await verifyEmail(email, codigo);
+    console.log("verify resp:", resp);
+   if (resp && resp.success) {
+  // Salvar token
+  if (resp.token) {
+    await AsyncStorage.setItem("token", String(resp.token));
+  }
+
+  // Salvar usuario_id do objeto user, para garantir
+  if (resp.user?.id) {
+    await AsyncStorage.setItem("usuario_id", String(resp.user.id));
+  } else if (resp.usuario_id) {
+    // fallback antigo
+    await AsyncStorage.setItem("usuario_id", String(resp.usuario_id));
+  }
+
+      // Se backend não retornou token, tenta login automático
+      if (!resp.token) {
+        const senhaParam = String(params.senha || params.password || "");
+        if (senhaParam && email) {
+          try {
+            await loginService(email, senhaParam);
+            console.log("Autologin successful after verify");
+          } catch (loginErr) {
+            console.log("Autologin failed after verify:", loginErr);
           }
         }
-        const from = String(params.from || "register");
-  if (from === "register") router.replace("/auth/welcome");
-        else if (from === "recover") router.push({ pathname: "/auth/redefined2", params: { email: String(email), from: "recover" } });
-        else if (from === "change") router.push({ pathname: "/auth/redefined2", params: { from: "change" } });
-  else router.replace("/auth/welcome");
-      } else {
-        const msg = String(resp?.message || "");
-        const from = String(params.from || "register");
-        const alreadyVerified = isAlreadyVerifiedMsg(msg);
-        if ((from === "recover" || from === "change") && alreadyVerified) {
-          if (from === "recover") router.push({ pathname: "/auth/redefined2", params: { email: String(email), from: "recover" } });
-          else router.push({ pathname: "/auth/redefined2", params: { from: "change" } });
-        } else {
-          setError(msg || "Código inválido");
-        }
       }
-    } catch (err: any) {
-      console.log("verify error:", err?.message || err);
+
       const from = String(params.from || "register");
-      const errMsg = err?.message || "Erro ao verificar código";
-      const alreadyVerified = isAlreadyVerifiedMsg(String(errMsg));
+      if (from === "register")
+        router.replace("/auth/welcome");
+      else if (from === "recover")
+        router.push({ pathname: "/auth/redefined2", params: { email: String(email), from: "recover" } });
+      else if (from === "change")
+        router.push({ pathname: "/auth/redefined2", params: { from: "change" } });
+      else
+        router.replace("/auth/welcome");
+    } else {
+      const msg = String(resp?.message || "");
+      const from = String(params.from || "register");
+      const alreadyVerified = isAlreadyVerifiedMsg(msg);
       if ((from === "recover" || from === "change") && alreadyVerified) {
-        if (from === "recover") router.push({ pathname: "/auth/redefined2", params: { email: String(email), from: "recover" } });
-        else router.push({ pathname: "/auth/redefined2", params: { from: "change" } });
-        return;
+        if (from === "recover")
+          router.push({ pathname: "/auth/redefined2", params: { email: String(email), from: "recover" } });
+        else
+          router.push({ pathname: "/auth/redefined2", params: { from: "change" } });
+      } else {
+        setError(msg || "Código inválido");
       }
-      setError(errMsg);
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (err: any) {
+    console.log("verify error:", err?.message || err);
+    const from = String(params.from || "register");
+    const errMsg = err?.message || "Erro ao verificar código";
+    const alreadyVerified = isAlreadyVerifiedMsg(String(errMsg));
+    if ((from === "recover" || from === "change") && alreadyVerified) {
+      if (from === "recover")
+        router.push({ pathname: "/auth/redefined2", params: { email: String(email), from: "recover" } });
+      else
+        router.push({ pathname: "/auth/redefined2", params: { from: "change" } });
+      return;
+    }
+    setError(errMsg);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // If user is changing password while logged in, send the verification code automatically
   useEffect(() => {

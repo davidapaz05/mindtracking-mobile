@@ -27,29 +27,34 @@ export default function Welcome() {
     <View style={styles.container}>
       <View style={styles.topo}>
         <Image
-          source={require("../../assets/icons/logo.png")} 
+          source={require("../../assets/icons/logo.png")}
           style={styles.logo}
           resizeMode="contain"
         />
 
         <View style={styles.titulos}>
           <Text style={styles.title}>Vamos começar, {nome ?? ""}</Text>
-          <Text style={styles.subtitle}>Para que Athena possa te conhecer melhor, vamos fazer algumas perguntas rápidas. Isso criará uma base para sua jornada de autoconhecimento.</Text>
+          <Text style={styles.subtitle}>
+            Para que Athena possa te conhecer melhor, vamos fazer algumas perguntas rápidas. Isso criará uma base para sua jornada de autoconhecimento.
+          </Text>
         </View>
       </View>
 
-
-    <View style={styles.buttonContainer}>
-      <View style={{ flex: 1 }} />
-      <TouchableOpacity style={styles.button} onPress={() => router.push("/auth/questionario")}> 
-        <Text style={styles.buttonText}>Começar</Text>
-      </TouchableOpacity>
-    </View>
-
-   
-      
-      
-     
+      <View style={styles.buttonContainer}>
+        <View style={{ flex: 1 }} />
+        <TouchableOpacity
+          style={styles.button}
+          onPress={async () => {
+            const usuario_id = await AsyncStorage.getItem("usuario_id");
+            router.push({
+              pathname: "/auth/questionario",
+              params: { usuario_id },
+            });
+          }}
+        >
+          <Text style={styles.buttonText}>Começar</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }

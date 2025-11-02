@@ -66,33 +66,36 @@ export default function Questionnaire() {
 
   // --- Recupera o ID do usuário autenticado ---
   useEffect(() => {
-    async function getUserId() {
-      try {
-        // Tenta obter o id salvo no AsyncStorage
-        let storedId = await AsyncStorage.getItem("usuario_id");
-        if (storedId) {
-          setUsuarioId(storedId);
-          return;
-        }
-
-        // Fallback: tenta extrair do JWT no AsyncStorage
-        const token = await AsyncStorage.getItem("token");
-        if (token) {
-          const payload = decodeJwt(token);
-          const id = payload?.id || payload?.user?.id || null;
-          if (id) {
-            storedId = String(id);
-            await AsyncStorage.setItem("usuario_id", storedId);
+    const idFromParams = String(params?.usuario_id || "");
+    if (idFromParams) {
+      setUsuarioId(idFromParams);
+      AsyncStorage.setItem("usuario_id", idFromParams); // garante persistência
+    } else {
+      // Fallback para AsyncStorage e token JWT já implementado abaixo
+      async function getUserId() {
+        try {
+          let storedId = await AsyncStorage.getItem("usuario_id");
+          if (storedId) {
             setUsuarioId(storedId);
+            return;
           }
+          const token = await AsyncStorage.getItem("token");
+          if (token) {
+            const payload = decodeJwt(token);
+            const id = payload?.id || payload?.user?.id || null;
+            if (id) {
+              storedId = String(id);
+              await AsyncStorage.setItem("usuario_id", storedId);
+              setUsuarioId(storedId);
+            }
+          }
+        } catch (e) {
+          console.log("Erro ao recuperar usuario_id:", e);
         }
-      } catch (e) {
-        console.log("Erro ao recuperar usuario_id:", e);
       }
+      getUserId();
     }
-
-    getUserId();
-  }, []);
+  }, [params?.usuario_id]);
 
   // --- Atualiza barra de progresso ---
   useEffect(() => {
