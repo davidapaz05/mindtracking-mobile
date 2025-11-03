@@ -15,29 +15,8 @@ import CardDenominado from "../components/cards/cardPerfil";
 import { recoverPassword } from "../../service/passwordService";
 
 const { width, height } = Dimensions.get("window");
-const AVATAR_SIZE = width * 0.442; // Responsivo, igual ao seu avatar
-const EDIT_SIZE = AVATAR_SIZE * 0.24; // Proporcional ao avatar
-
-// Helper: search object (possibly nested) for first matching key from candidates
-function findFirstMatch(obj: any, candidates: string[]): any {
-  if (!obj || typeof obj !== "object") return null;
-  for (const k of candidates) {
-    if (Object.prototype.hasOwnProperty.call(obj, k) && obj[k]) return obj[k];
-  }
-  // deep search
-  for (const key of Object.keys(obj)) {
-    try {
-      const val = obj[key];
-      if (val && typeof val === "object") {
-        const found = findFirstMatch(val, candidates);
-        if (found) return found;
-      }
-    } catch (e) {
-      // ignore
-    }
-  }
-  return null;
-}
+const AVATAR_SIZE = width * 0.442;
+const EDIT_SIZE = AVATAR_SIZE * 0.24;
 
 export default function Perfil() {
   const router = useRouter();
@@ -47,99 +26,93 @@ export default function Perfil() {
   const [numero, setNumero] = useState<string | null>(null);
   const [genero, setGenero] = useState<string | null>(null);
 
-  // Re-run profile load every time the screen is focused so updates are reflected
   useFocusEffect(
     useCallback(() => {
       let mounted = true;
 
       async function loadProfilePreferLocal() {
         try {
-          // Prefer token as source of truth for user info
           const token = await AsyncStorage.getItem("token");
           if (token) {
             try {
               const parts = token.split(".");
               if (parts.length >= 2) {
-                const payloadB64 = parts[1];
-                const padded = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
-                // pad base64
-                const pad = padded.length % 4;
-                const withPad = pad === 0 ? padded : padded + "=".repeat(4 - pad);
-                let json: string | null = null;
+                const payloadB64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+                const pad = payloadB64.length % 4;
+                const withPad = pad === 0 ? payloadB64 : payloadB64 + "=".repeat(4 - pad);
                 const atobFn = (global as any).atob || (globalThis as any).atob;
-                if (typeof atobFn === "function") {
-                  const decoded = atobFn(withPad);
-                  try {
-                    json = decodeURIComponent(
-                      Array.prototype
-                        .map.call(decoded, function (c: string) {
-                          return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-                        })
-                        .join("")
-                    );
-                  } catch (e) {
-                    json = decoded;
-                  }
-                } else if (typeof (global as any).Buffer !== "undefined") {
-                  json = (global as any).Buffer.from(withPad, "base64").toString("utf8");
+                let decoded = "";
+                if (typeof atobFn === "function") decoded = atobFn(withPad);
+                else if (typeof (global as any).Buffer !== "undefined")
+                  decoded = (global as any).Buffer.from(withPad, "base64").toString("utf8");
+                let parsed: any = null;
+                try {
+                  parsed = JSON.parse(decoded);
+                } catch {
+                  parsed = decoded;
                 }
 
-                if (json) {
-                  try {
-                    const parsed = JSON.parse(json);
-
-                    // robust lookup across many possible key names and nested objects
-                    const nameCandidates = [
-                      "nome",
-                      "name",
-                      "fullName",
-                      "full_name",
-                      "username",
-                      "usuario",
-                      "user",
-                      "given_name",
-                    ];
-                    const emailCandidates = ["email", "mail", "usuario_email"];
-                    const phoneCandidates = ["numero", "phone", "phone_number", "celular", "telefone"];
-                    const genderCandidates = ["genero", "gender", "sexo"];
-
-                    const serverNome = findFirstMatch(parsed, nameCandidates) ?? null;
-                    const serverEmail = findFirstMatch(parsed, emailCandidates) ?? null;
-                    const serverNumero = findFirstMatch(parsed, phoneCandidates) ?? null;
-                    const serverGenero = findFirstMatch(parsed, genderCandidates) ?? null;
-
-                    // Busca nome armazenado localmente no AsyncStorage
-                    const nomeLocal = await AsyncStorage.getItem("nome");
-
-                    if (mounted) {
-                      // Prioriza nome do token, se não existir usa o local
-                      setNome(serverNome ?? nomeLocal ?? "");
-                      if (serverEmail) setEmail(String(serverEmail));
-                      if (serverNumero) setNumero(String(serverNumero));
-                      if (serverGenero) setGenero(String(serverGenero));
-                    }
-
-                    // still load photo from AsyncStorage if present
-                    const f = await AsyncStorage.getItem("foto");
-                    if (mounted && f) setFoto(f);
-
-                    // persist these values locally for other flows if desired
+                const findFirstMatch = (obj: any, candidates: string[]): any => {
+                  if (!obj || typeof obj !== "object") return null;
+                  for (const k of candidates) {
+                    if (Object.prototype.hasOwnProperty.call(obj, k) && obj[k]) return obj[k];
+                  }
+                  for (const key of Object.keys(obj)) {
                     try {
-                      if (serverNome) await AsyncStorage.setItem("nome", String(serverNome));
-                      if (serverEmail) await AsyncStorage.setItem("email", String(serverEmail));
-                    } catch (e) {
-                      // ignore
-                    }
-                  } catch (e) {
-                    // ignore parse error
+                      const val = obj[key];
+                      if (val && typeof val === "object") {
+                        const found = findFirstMatch(val, candidates);
+                        if (found) return found;
+                      }
+                    } catch {}
                   }
+                  return null;
+                };
+
+                const nameCandidates = [
+                  "nome",
+                  "name",
+                  "fullName",
+                  "full_name",
+                  "username",
+                  "usuario",
+                  "user",
+                  "given_name",
+                ];
+                const emailCandidates = ["email", "mail", "usuario_email"];
+                const phoneCandidates = ["numero", "phone", "phone_number", "celular", "telefone"];
+                const genderCandidates = ["genero", "gender", "sexo"];
+                const photoCandidates = ["foto", "foto_perfil_url", "profile_picture"];
+
+                const serverNome = findFirstMatch(parsed, nameCandidates) ?? null;
+                const serverEmail = findFirstMatch(parsed, emailCandidates) ?? null;
+                const serverNumero = findFirstMatch(parsed, phoneCandidates) ?? null;
+                const serverGenero = findFirstMatch(parsed, genderCandidates) ?? null;
+                const serverFoto = findFirstMatch(parsed, photoCandidates) ?? null;
+
+                const nomeLocal = await AsyncStorage.getItem("nome");
+                const emailLocal = await AsyncStorage.getItem("email");
+                const fotoLocal = await AsyncStorage.getItem("foto");
+
+                if (mounted) {
+                  setNome(serverNome ?? nomeLocal ?? "");
+                  if (serverEmail) setEmail(String(serverEmail));
+                  else if (emailLocal) setEmail(emailLocal);
+                  if (serverNumero) setNumero(String(serverNumero));
+                  if (serverGenero) setGenero(String(serverGenero));
+                  if (serverFoto) setFoto(String(serverFoto));
+                  else if (fotoLocal) setFoto(fotoLocal);
                 }
+
+                try {
+                  if (serverNome) await AsyncStorage.setItem("nome", String(serverNome));
+                  if (serverEmail) await AsyncStorage.setItem("email", String(serverEmail));
+                  if (serverFoto) await AsyncStorage.setItem("foto", String(serverFoto));
+                } catch {}
               }
-            } catch (e) {
-              // ignore
-            }
+            } catch {}
           } else {
-            // No token: fall back to local storage for name/email/foto
+            // No token fallback to local storage
             const [n, e, f] = await Promise.all([
               AsyncStorage.getItem("nome"),
               AsyncStorage.getItem("email"),
@@ -151,9 +124,7 @@ export default function Perfil() {
               if (f) setFoto(f);
             }
           }
-        } catch (err) {
-          // ignore
-        }
+        } catch {}
       }
 
       loadProfilePreferLocal();
@@ -177,7 +148,10 @@ export default function Perfil() {
       </View>
       <View style={styles.topo}>
         <View style={styles.avatarWrapper}>
-          <Image source={{ uri: foto ?? "https://i.pravatar.cc/100" }} style={styles.avatar} />
+          <Image
+            source={foto ? { uri: foto } : undefined}
+            style={styles.avatar}
+          />
           <Pressable style={styles.editButton} onPress={() => router.push("/(tabs)/alterarfoto")}>
             <View style={styles.editCircle}>
               <Image source={require("@assets/icons/Edit.png")} style={styles.editIcon} />
@@ -190,26 +164,26 @@ export default function Perfil() {
       <View style={styles.cardsContainer}>
         <CardDenominado tipo="progresso" onPress={() => router.push("/(tabs)/dashboard")} />
         <CardDenominado
-  tipo="alterarSenha"
-  onPress={async () => {
-    try {
-      const email = await AsyncStorage.getItem("email");
-      if (!email) {
-        Alert.alert("Erro", "Email não encontrado. Faça login novamente.");
-        router.replace("/auth/login");
-        return;
-      }
-      const resp = await recoverPassword(email);
-      if (resp && resp.success) {
-        router.push({ pathname: "/auth/confirm-code", params: { email, from: "recover" } });
-      } else {
-        Alert.alert("Erro", resp?.message || "Email não identificado");
-      }
-    } catch (err: any) {
-      Alert.alert("Erro", err?.message || "Erro ao enviar código");
-    }
-  }}
-/>
+          tipo="alterarSenha"
+          onPress={async () => {
+            try {
+              const email = await AsyncStorage.getItem("email");
+              if (!email) {
+                Alert.alert("Erro", "Email não encontrado. Faça login novamente.");
+                router.replace("/auth/login");
+                return;
+              }
+              const resp = await recoverPassword(email);
+              if (resp && resp.success) {
+                router.push({ pathname: "/auth/confirm-code", params: { email, from: "recover" } });
+              } else {
+                Alert.alert("Erro", resp?.message || "Email não identificado");
+              }
+            } catch (err: any) {
+              Alert.alert("Erro", err?.message || "Erro ao enviar código");
+            }
+          }}
+        />
         <CardDenominado tipo="editarPerfil" onPress={() => router.push("/(tabs)/alterarfoto")} />
         <CardDenominado
           tipo="sairDaConta"
@@ -218,15 +192,13 @@ export default function Perfil() {
             try {
               await AsyncStorage.removeItem("email");
               await AsyncStorage.removeItem("nome");
-            } catch (e) {
-              // ignore
-            }
+              await AsyncStorage.removeItem("foto");
+            } catch {}
             router.replace("/auth/login");
           }}
         />
       </View>
 
-      {/* Debug button to inspect token and storage for troubleshooting */}
       <View style={{ paddingHorizontal: width * 0.07, marginTop: 16 }}>
         <TouchableOpacity
           style={styles.debugBtn}
@@ -252,35 +224,22 @@ export default function Perfil() {
                       decoded = (global as any).Buffer.from(withPad, "base64").toString("utf8");
                     try {
                       parsed = JSON.parse(decoded);
-                    } catch (e) {
+                    } catch {
                       parsed = decoded;
                     }
                   }
-                } catch (e) {
-                  // ignore
-                }
+                } catch {}
               }
 
-              console.log(
-                "PROFILE DEBUG -> token:",
-                token,
-                "parsed:",
-                parsed,
-                "nomeStored:",
-                nomeStored,
-                "emailStored:",
-                emailStored,
-                "fotoStored:",
-                fotoStored,
-                "usuarioId:",
-                usuarioId
-              );
               Alert.alert(
                 "Profile Debug",
-                JSON.stringify({ token: !!token, parsed, nomeStored, emailStored, fotoStored, usuarioId }, null, 2)
+                JSON.stringify(
+                  { token: !!token, parsed, nomeStored, emailStored, fotoStored, usuarioId },
+                  null,
+                  2
+                )
               );
             } catch (err) {
-              console.log("Debug error", err);
               Alert.alert("Erro", String(err));
             }
           }}
@@ -291,6 +250,7 @@ export default function Perfil() {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -331,7 +291,7 @@ const styles = StyleSheet.create({
   avatarWrapper: {
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
-    position: "relative", // Permite posicionamento absoluto do botão
+    position: "relative",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -344,8 +304,8 @@ const styles = StyleSheet.create({
   },
   editButton: {
     position: "absolute",
-    right: width * 0.009, // Sempre no canto direito da foto
-    bottom: 0, // Sempre embaixo da foto
+    right: width * 0.009,
+    bottom: 0,
   },
   editCircle: {
     width: EDIT_SIZE,

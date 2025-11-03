@@ -3,18 +3,34 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from 'react';
 import {
-    Alert, Dimensions,
-    Image,
-    Pressable, StyleSheet, Text,
-    TouchableOpacity, View
+  Alert, Dimensions,
+  Image,
+  Pressable, StyleSheet, Text,
+  TouchableOpacity, View
 } from 'react-native';
-import { saveProfilePhoto, uploadImageToCloudinary } from "../../service/profileService";
 import ButtonBase from "../components/common/button/button";
-
+import axios from 'axios';
 
 const { width, height } = Dimensions.get("window");
-const AVATAR_SIZE = width * 0.482; // Responsivo, igual ao seu avatar
+const AVATAR_SIZE = width * 0.482;
 const EDIT_SIZE = AVATAR_SIZE * 0.24;
+
+const CLOUDINARY_UPLOAD_PRESET = "mindtracking";
+const CLOUDINARY_CLOUD_NAME = "danydlyeq";
+
+// Configuração axios com base URL e interceptor de token
+const api = axios.create({
+  baseURL: "http://44.220.11.145", // Ajuste se necessário
+});
+
+api.interceptors.request.use(async (config) => {
+  const token = await AsyncStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => Promise.reject(error));
+
 export default function Perfil() {
   const router = useRouter();
   const [localUri, setLocalUri] = useState<string | null>(null);
@@ -22,17 +38,69 @@ export default function Perfil() {
 
   useEffect(() => {
     (async () => {
+      const storedFoto = await AsyncStorage.getItem("foto");
+      if (storedFoto) {
+        setLocalUri(storedFoto);
+      }
+
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
         Alert.alert("Permissão necessária", "Permita o acesso à galeria.");
         router.back();
         return;
       }
-      // auto open picker when screen mounts
-      await openPickerAndUpload();
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function uploadImageToCloudinary(uri: string): Promise<string | null> {
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("file", {
+        uri,
+        type: "image/jpeg",
+        name: "perfil.jpg",
+      } as any);
+      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`,
+        { method: "POST", body: formData }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Cloudinary upload error:", errorText);
+        Alert.alert("Erro no upload", "Falha ao enviar imagem para o servidor");
+        return null;
+      }
+
+      const data = await response.json();
+      return data.secure_url;
+    } catch (error) {
+      console.error("Erro upload Cloudinary:", error);
+      Alert.alert("Erro no upload", String(error));
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  // Atualiza backend usando axios com token automático
+  async function updateFotoUsuarioBackend(body: Object) {
+    try {
+      const response = await api.put("/auth/profile", body);
+      if (response.status === 200) {
+        console.log("Foto atualizada com sucesso:", response.data);
+      } else {
+        console.error("Falha na atualização:", response.status, response.data);
+        Alert.alert("Erro", "Não foi possível atualizar a foto no servidor");
+      }
+    } catch (error) {
+      console.error("Erro na requisição backend:", error);
+      Alert.alert("Erro", "Não foi possível atualizar a foto no servidor");
+    }
+  }
 
   async function openPickerAndUpload() {
     try {
@@ -41,11 +109,12 @@ export default function Perfil() {
         allowsEditing: true,
         quality: 0.8,
       });
+
       if (result.canceled) {
-        // user cancelled, go back
         router.back();
         return;
       }
+
       const uri = result.assets && result.assets[0] && result.assets[0].uri;
       if (!uri) {
         Alert.alert('Erro', 'Não foi possível obter a imagem selecionada.');
@@ -56,32 +125,23 @@ export default function Perfil() {
       setLocalUri(uri);
       setUploading(true);
 
-      // Upload to Cloudinary
-      const uploadResp = await uploadImageToCloudinary(uri);
-      const imageUrl = uploadResp?.secure_url || uploadResp?.url || null;
+      const imageUrl = await uploadImageToCloudinary(uri);
       if (!imageUrl) throw new Error('Upload não retornou URL');
 
-      // Send URL to backend to save
-      await saveProfilePhoto(imageUrl);
-
-      // persist locally as well (saveProfilePhoto already writes to AsyncStorage, but ensure immediate read)
-      try {
-        await AsyncStorage.setItem('foto', String(imageUrl));
-      } catch (e) {
-        // ignore
-      }
+      await updateFotoUsuarioBackend({ foto_perfil_url: imageUrl });
+      await AsyncStorage.setItem('foto', imageUrl);
+      setLocalUri(imageUrl);
 
       Alert.alert('Sucesso', 'Foto atualizada com sucesso!');
       router.replace('/(tabs)/perfil');
-    } catch (err: any) {
-      console.log('Erro ao enviar foto:', err);
-      Alert.alert('Erro', err?.message || 'Não foi possível enviar a foto');
+    } catch (error: any) {
+      console.log('Erro ao enviar foto:', error);
+      Alert.alert('Erro', error?.message || 'Não foi possível enviar a foto');
       router.back();
     } finally {
       setUploading(false);
     }
   }
-
 
   return (
     <View style={styles.container}>
@@ -100,27 +160,29 @@ export default function Perfil() {
       <View style={styles.topo}>
         <View style={styles.avatarWrapper}>
           <Image
-            source={{ uri: "https://i.pravatar.cc/100" }}
+            source={localUri ? { uri: localUri } : undefined}
             style={styles.avatar}
           />
           <Pressable
-  style={styles.editButton}
-  onPress={() => router.push("/(tabs)/alterarfoto")}
->
-  <View style={styles.editCircle}>
-    <Image
-      source={require("@assets/icons/Edit.png")}
-      style={styles.editIcon}
-    />
-  </View>
-</Pressable>
-          
+            style={styles.editButton}
+            onPress={openPickerAndUpload}
+            disabled={uploading}
+          >
+            <View style={styles.editCircle}>
+              <Image
+                source={require("@assets/icons/Edit.png")}
+                style={styles.editIcon}
+              />
+            </View>
+          </Pressable>
         </View>
         <Text style={styles.titulo}>{uploading ? 'Enviando foto...' : 'Deseja alterar a foto?'}</Text>
-        <ButtonBase title={uploading ? 'Enviando...' : 'Abrir galeria'} onPress={openPickerAndUpload} />
+        <ButtonBase
+          title={uploading ? 'Enviando...' : 'Abrir galeria'}
+          onPress={openPickerAndUpload}
+          disabled={uploading}
+        />
       </View>
-
-      
     </View>
   );
 }
@@ -132,7 +194,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: width * 0.07,
     paddingTop: height * 0.06,
   },
-  
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -150,12 +211,11 @@ const styles = StyleSheet.create({
   topo: {
     alignItems: "center",
     gap: height * 0.04,
-    marginBottom: height * 0.,
-    
   },
   textContainer: {
     flex: 1,
-    alignItems: "center",  },
+    alignItems: "center",
+  },
   perfilText: {
     color: "#fff",
     fontSize: Math.max(width * 0.05, 14),
@@ -164,14 +224,14 @@ const styles = StyleSheet.create({
   avatarWrapper: {
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
-    position: "relative", // Permite posicionamento absoluto do botão
+    position: "relative",
     alignItems: "center",
     justifyContent: "center",
   },
   editButton: {
     position: "absolute",
-    right: width * 0.009, // Sempre no canto direito da foto
-    bottom: 0, // Sempre embaixo da foto
+    right: width * 0.009,
+    bottom: 0,
   },
   editCircle: {
     width: EDIT_SIZE,
@@ -198,7 +258,5 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: Math.max(width * 0.06, 16),
     fontFamily: "Inter_600SemiBold",
-    
   },
- 
 });
