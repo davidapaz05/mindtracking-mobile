@@ -1,11 +1,11 @@
 import { usePathname, useRouter } from "expo-router";
 import React from "react";
 import {
-  Dimensions,
-  Image,
-  StyleSheet,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    Image,
+    StyleSheet,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -27,6 +27,9 @@ export default function BottomNavbar({ userPhoto }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets(); // 👈 pega altura do sistema (Android/iOS)
+  // Não mostrar a navbar em telas específicas (ex.: editar perfil)
+  const hideOnPaths = ["/(tabs)/editarperfil", "/editarperfil"];
+  if (pathname && hideOnPaths.some(p => pathname.includes(p))) return null;
 
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>

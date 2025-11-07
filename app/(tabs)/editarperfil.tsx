@@ -1,6 +1,8 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { Dimensions, Image, StyleSheet, Text, View } from "react-native";
-import { register as registerService } from "../../service/registroService";
+import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import api from "../../service/api";
 import ButtonBase from "../components/common/button/button";
 import InputBase from "../components/common/input/inputBase";
 import BirthDateInput from "../components/common/input/inputData";
@@ -19,6 +21,10 @@ function formatDateToIso(date: string) {
 }
 
 export default function RegisterScreen2() {
+  const router = useRouter();
+  const params = useLocalSearchParams();
+
+  console.log("Params vindos da tela 1:", params);
 
   const [nome, setNome] = useState("");
   const [dataNascimento, setDataNascimento] = useState("");
@@ -37,10 +43,20 @@ export default function RegisterScreen2() {
 
   const dataNascIso = formatDateToIso(dataNascimento);
 
-    // sanitize / trim inputs
+  
+    const senha = params.senha || params.password || "";
+    const confirmarSenha = params.confirmarSenha || params.confirmPassword || "";
+    const email = params.email || "";
+
+    if (!senha || !confirmarSenha || !email) {
+      setError("Campos de senha e email obrigatórios estão faltando.");
+      setLoading(false);
+      return;
+    }
+   
     const nomeTrim = nome.trim();
     const generoTrim = genero.trim();
-    // map frontend labels to backend expected values
+
     let generoMapped = generoTrim;
     const g = generoTrim.toLowerCase();
     if (g === "masculino") generoMapped = "masculino";
@@ -48,41 +64,31 @@ export default function RegisterScreen2() {
     else if (g === "outro") generoMapped = "outro";
     const telefoneSanitized = telefone.replace(/[^0-9+]/g, "").trim();
 
-    console.log("Enviando dados para registro/edição de perfil:", {
-      nome: nomeTrim,
-      data_nascimento: dataNascIso,
-      telefone: telefoneSanitized,
-      genero: generoMapped,
-    });
-
     try {
-        const payload = {
-          nome: nomeTrim,
-          data_nascimento: dataNascIso,
-          genero: generoMapped,
-          telefone: telefoneSanitized,
-        };
+      const payload: any = {
+        nome: nomeTrim,
+        data_nascimento: dataNascIso,
+        genero: generoMapped,
+        telefone: telefoneSanitized,
+      };
 
-        console.log("Payload enviado para registro/edição de perfil:", JSON.stringify(payload, null, 2));
+      const response = await api.put("", payload);
 
-        const response = await registerService(payload);
+      if (response && (response.status === 200 || response.status === 201)) {
+        
+        try {
+          await AsyncStorage.setItem("nome", String(nomeTrim));
+          await AsyncStorage.setItem("telefone", String(telefoneSanitized));
+          if (generoMapped) await AsyncStorage.setItem("genero", String(generoMapped));
+        } catch {}
 
-        console.log("Resposta registro/edição data:", response);
-
-        if (response && response.success) {
-          // Sucesso: aqui não redirecionamos com router (tela é usada para editar perfil);
-          // manter apenas log/estado. Se quiser, pode exibir uma notificação ou navegar.
-          setError("");
-        } else {
-          setError(response?.message || "Erro ao salvar perfil");
-        }
-    } catch (error: any) {
-      console.log("Erro no registro (erro):", error);
-      console.log("Erro no registro (response.status):", error?.response?.status);
-      console.log("Erro no registro (response.headers):", error?.response?.headers);
-      console.log("Erro no registro (response.data):", error?.response?.data);
-      // prefer server message when available
-      setError(error?.response?.data?.message || error?.message || "Erro ao salvar perfil");
+        router.replace("/(tabs)/perfil");
+      } else {
+        setError(response?.data?.message || "Erro ao salvar perfil");
+      }
+    } catch (err: any) {
+      console.log("Erro ao atualizar perfil:", err);
+      setError(err?.response?.data?.message || err?.message || "Erro ao salvar perfil");
     } finally {
       setLoading(false);
     }
@@ -90,16 +96,22 @@ export default function RegisterScreen2() {
 
   return (
     <View style={styles.container}>
+        <View style={styles.header}>
+                <TouchableOpacity onPress={() => router.back()}>
+                  <Image source={require("../../assets/icons/seta.png")} style={styles.seta} />
+                </TouchableOpacity>
+                <View style={styles.textContainer} />
+                <View style={{ width: width * 0.09 }} />
+        </View>
       <View style={styles.topo}>
         <Image source={require("../../assets/icons/logo.png")} style={styles.logo} resizeMode="contain" />
         <View style={styles.titulos}>
-          <Text style={styles.title}>Estamos quase lá</Text>
-          <Text style={styles.subtitle}>Para uma experiência mais pessoal, precisamos de alguns detalhes. Como podemos te chamar?</Text>
-        </View>
+          <Text style={styles.title}>Editar perfil</Text>
+           </View>
       </View>
 
       <View style={styles.inputs}>
-        <InputBase placeholder="Digite seu nome" iconLeft="user" value={nome} onChangeText={setNome} />
+        <InputBase placeholder="Nome" iconLeft="user" value={nome} onChangeText={setNome} />
         <BirthDateInput value={dataNascimento} onChange={setDataNascimento} />
         <PhoneInput value={telefone} onChange={setTelefone} />
         <InputGender value={genero} onChange={setGenero} />
@@ -107,7 +119,7 @@ export default function RegisterScreen2() {
       </View>
 
       <View style={styles.botoes}>
-        <ButtonBase title={loading ? "Salvando..." : "Próxima etapa"} onPress={handleNext} disabled={loading} />
+        <ButtonBase title={loading ? "Salvando..." : "Salvar"} onPress={handleNext} disabled={loading} />
       </View>
     </View>
   );
@@ -118,7 +130,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#0F172A",
     paddingHorizontal: width * 0.08,
-    paddingVertical: height * 0.06,
+    paddingTop: height * 0.12,
+    paddingBottom: height * 0.06,
     justifyContent: "center",
   },
   logo: {
@@ -128,6 +141,29 @@ const styles = StyleSheet.create({
   inputs: {
     justifyContent: "flex-start",
   },
+  header: {
+    position: "absolute",
+    top: height * 0.07,
+    left: width * 0.07,
+    right: width * 0.08,
+    flexDirection: "row",
+    alignItems: "center",
+    zIndex: 50,
+  },
+  seta: {
+    width: width * 0.09,
+    height: width * 0.08,
+    tintColor: "#fff",
+    resizeMode: "contain",
+    transform: [{ rotate: "90deg" }],
+    zIndex: 60,
+    elevation: 6,
+  },
+    textContainer: {
+    flex: 1,
+    alignItems: "center",
+  },
+
   topo: {
     gap: height * 0.05,
     marginBottom: height * 0.02,

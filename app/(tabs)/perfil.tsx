@@ -5,14 +5,17 @@ import {
   Alert,
   Dimensions,
   Image,
+  Modal,
   Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import CardDenominado from "../components/cards/cardPerfil";
 import { recoverPassword } from "../../service/passwordService";
+import CardDenominado from "../components/cards/cardPerfil";
+import ButtonBase from "../components/common/button/button";
+import ButtonBase2 from "../components/common/button/button2";
 
 const { width, height } = Dimensions.get("window");
 const AVATAR_SIZE = width * 0.442;
@@ -20,6 +23,7 @@ const EDIT_SIZE = AVATAR_SIZE * 0.24;
 
 export default function Perfil() {
   const router = useRouter();
+  const [showLogoutModal, setShowLogoutModal] = React.useState(false);
   const [email, setEmail] = useState<string | null>(null);
   const [nome, setNome] = useState<string | null>(null);
   const [foto, setFoto] = useState<string | null>(null);
@@ -184,19 +188,8 @@ export default function Perfil() {
             }
           }}
         />
-        <CardDenominado tipo="editarPerfil" onPress={() => router.push("/(tabs)/alterarfoto")} />
-        <CardDenominado
-          tipo="sairDaConta"
-          onPress={async () => {
-            await AsyncStorage.removeItem("token");
-            try {
-              await AsyncStorage.removeItem("email");
-              await AsyncStorage.removeItem("nome");
-              await AsyncStorage.removeItem("foto");
-            } catch {}
-            router.replace("/auth/login");
-          }}
-        />
+        <CardDenominado tipo="editarPerfil" onPress={() => router.push("/(tabs)/editarperfil")} />
+        <CardDenominado tipo="sairDaConta" onPress={() => setShowLogoutModal(true)} />
       </View>
 
       <View style={{ paddingHorizontal: width * 0.07, marginTop: 16 }}>
@@ -247,6 +240,44 @@ export default function Perfil() {
           <Text style={styles.debugText}>Debug Profile</Text>
         </TouchableOpacity>
       </View>
+
+      <Modal
+        visible={showLogoutModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLogoutModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Sair da conta</Text>
+            <Text style={styles.modalSubtitle}>
+              Tem certeza que deseja sair da sua conta?
+            </Text>
+
+            <View style={{ marginTop: 8 }} />
+
+            <ButtonBase2 title="Não" onPress={() => setShowLogoutModal(false)} />
+            <ButtonBase
+              title="Sim"
+              onPress={async () => {
+                try {
+                  await AsyncStorage.removeItem("token");
+                  try {
+                    await AsyncStorage.removeItem("email");
+                    await AsyncStorage.removeItem("nome");
+                    await AsyncStorage.removeItem("foto");
+                  } catch {}
+                  setShowLogoutModal(false);
+                  router.replace("/auth/login");
+                } catch (err: any) {
+                  Alert.alert("Erro", err?.message || "Erro ao sair da conta");
+                  setShowLogoutModal(false);
+                }
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -343,5 +374,38 @@ const styles = StyleSheet.create({
   debugText: {
     color: "#fff",
     fontFamily: "Inter_600SemiBold",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: width * 0.02,
+  },
+  modalContent: {
+    backgroundColor: "#1E293B",
+    borderRadius: 16,
+    padding: height * 0.03,
+    paddingTop: height * 0.04,
+    width: "90%",
+    
+  },
+  modalTitle: {
+    fontSize: width * 0.05,
+    fontFamily: "Inter_700Bold",
+    color: "#fff",
+    marginBottom: height * 0.025,
+    flexShrink: 1,
+    alignContent: "center",
+    textAlign: "center",
+  },
+  modalSubtitle: {
+    textAlign: "center",
+    fontSize: width * 0.042,
+    fontFamily: "Inter_500Medium",
+    color: "#fff",
+    marginBottom: height * 0.03,
+    lineHeight: height * 0.028,
+    flexShrink: 1,
   },
 });
