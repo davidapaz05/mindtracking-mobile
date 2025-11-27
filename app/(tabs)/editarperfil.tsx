@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import api from "../../service/api";
 import ButtonBase from "../components/common/button/button";
@@ -10,7 +10,7 @@ import InputGender from "../components/common/input/inputGenero";
 import PhoneInput from "../components/common/input/inputPhone";
 
 const { width, height } = Dimensions.get("window");
-const API_BASE_URL = "http://44.220.11.145";
+const API_BASE_URL = "https://mindtracking-api-1.onrender.com";
 
 function formatDateToIso(date: string) {
   if (!date) return "";
@@ -20,7 +20,7 @@ function formatDateToIso(date: string) {
   return `${ano}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")}`;
 }
 
-export default function RegisterScreen2() {
+export default function EditarPerfilScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
 
@@ -33,6 +33,47 @@ export default function RegisterScreen2() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Ao abrir a tela, buscar dados atuais do perfil
+  useEffect(() => {
+    let mounted = true;
+    const formatDateToDisplay = (isoDate?: string) => {
+      if (!isoDate) return "";
+      const d = isoDate.split("T")[0];
+      const [y, m, day] = d.split("-");
+      if (!y || !m || !day) return "";
+      return `${day}/${m}/${y}`;
+    };
+    const formatPhoneDisplay = (raw?: string) => {
+      if (!raw) return "";
+      const onlyNums = raw.replace(/\D/g, "");
+      const limited = onlyNums.slice(0, 11);
+      if (limited.length <= 2) return limited;
+      if (limited.length <= 6) return `(${limited.slice(0, 2)}) ${limited.slice(2)}`;
+      if (limited.length === 11) return `(${limited.slice(0, 2)}) ${limited.slice(2, 7)}-${limited.slice(7)}`;
+      return `(${limited.slice(0, 2)}) ${limited.slice(2, 6)}-${limited.slice(6)}`;
+    };
+
+    const loadProfile = async () => {
+      try {
+        const res = await api.get('/auth/profile');
+        const profile = res?.data?.data || res?.data?.user || res?.data || null;
+        if (!mounted || !profile) return;
+        const nomeSrv = profile.nome ?? profile.name ?? "";
+        const telefoneSrv = profile.telefone ?? profile.phone ?? "";
+        const dataSrv = profile.data_nascimento ?? profile.birthdate ?? "";
+        const generoSrv = profile.genero ?? profile.gender ?? "";
+        setNome(nomeSrv);
+        setTelefone(formatPhoneDisplay(telefoneSrv));
+        setDataNascimento(formatDateToDisplay(dataSrv));
+        setGenero(generoSrv);
+      } catch (e) {
+        // ignore
+      }
+    };
+    loadProfile();
+    return () => { mounted = false; };
+  }, []);
+
   const handleNext = async () => {
     if (!nome || !dataNascimento || !telefone || !genero) {
       setError("Preencha todos os campos.");
@@ -44,16 +85,6 @@ export default function RegisterScreen2() {
   const dataNascIso = formatDateToIso(dataNascimento);
 
   
-    const senha = params.senha || params.password || "";
-    const confirmarSenha = params.confirmarSenha || params.confirmPassword || "";
-    const email = params.email || "";
-
-    if (!senha || !confirmarSenha || !email) {
-      setError("Campos de senha e email obrigatórios estão faltando.");
-      setLoading(false);
-      return;
-    }
-   
     const nomeTrim = nome.trim();
     const generoTrim = genero.trim();
 
@@ -72,7 +103,7 @@ export default function RegisterScreen2() {
         telefone: telefoneSanitized,
       };
 
-      const response = await api.put("", payload);
+      const response = await api.put("/auth/profile", payload);
 
       if (response && (response.status === 200 || response.status === 201)) {
         
@@ -80,6 +111,7 @@ export default function RegisterScreen2() {
           await AsyncStorage.setItem("nome", String(nomeTrim));
           await AsyncStorage.setItem("telefone", String(telefoneSanitized));
           if (generoMapped) await AsyncStorage.setItem("genero", String(generoMapped));
+          if (dataNascIso) await AsyncStorage.setItem("data_nascimento", String(dataNascIso));
         } catch {}
 
         router.replace("/(tabs)/perfil");

@@ -2,20 +2,20 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  Dimensions,
-  Image,
-  LayoutChangeEvent,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    Image,
+    LayoutChangeEvent,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import {
-  AthenaCard,
-  ExportarJornadaCard,
-  InfoCard,
-  StatCard,
+    AthenaCard,
+    ExportarJornadaCard,
+    InfoCard,
+    StatCard,
 } from "../components/cards/cardDashboard1";
 import { GraficoCard } from "../components/cards/grafico";
 
@@ -69,7 +69,7 @@ export default function Dashboard() {
       if (!usuarioId || !token) return;
       try {
         const response = await fetch(
-          `http://44.220.11.145/questionario/historico/${usuarioId}`,
+          `https://mindtracking-api-1.onrender.com/questionario/historico/${usuarioId}`,
           {
             method: "GET",
             headers: {
@@ -97,7 +97,7 @@ export default function Dashboard() {
       if (!usuarioId || !token) return;
       try {
         const response = await fetch(
-          `http://44.220.11.145/questionario/diario/verificar/${usuarioId}`,
+          `https://mindtracking-api-1.onrender.com/questionario/diario/verificar/${usuarioId}`,
           {
             method: "GET",
             headers: {
@@ -125,7 +125,7 @@ export default function Dashboard() {
       if (!usuarioId || !token) return;
       try {
         const response = await fetch(
-          `http://44.220.11.145/questionario/pontuacao/${usuarioId}`,
+          `https://mindtracking-api-1.onrender.com/questionario/pontuacao/${usuarioId}`,
           {
             method: "GET",
             headers: {
@@ -152,7 +152,7 @@ export default function Dashboard() {
     async function fetchDica() {
       if (!token) return;
       try {
-        const response = await fetch("http://44.220.11.145/api/dica", {
+        const response = await fetch("https://mindtracking-api-1.onrender.com/api/dica", {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -185,7 +185,7 @@ export default function Dashboard() {
         return;
       }
       try {
-        const response = await fetch("http://44.220.11.145/api/diagnosticos", {
+        const response = await fetch("https://mindtracking-api-1.onrender.com/api/diagnosticos", {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -218,7 +218,7 @@ export default function Dashboard() {
       if (!usuarioId || !token) return;
       try {
         const response = await fetch(
-          `http://44.220.11.145/questionario/correlacoes/${usuarioId}`,
+          `https://mindtracking-api-1.onrender.com/questionario/correlacoes/${usuarioId}`,
           {
             method: "GET",
             headers: {

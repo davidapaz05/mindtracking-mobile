@@ -1,9 +1,9 @@
-import CustomButton from "../components/cards/cardIA";
-import InputIA from "../components/common/input/inputIA";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import { Dimensions, FlatList, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import CustomButton from "../components/cards/cardIA";
+import InputIA from "../components/common/input/inputIA";
 
 const { width, height } = Dimensions.get("window");
 
@@ -12,7 +12,7 @@ const sendMessage = async (msg: string) => {
   try {
     const token = await AsyncStorage.getItem("token");
 
-    const response = await fetch("http://44.220.11.145/api/chat", {
+    const response = await fetch("https://mindtracking-api-1.onrender.com/api/chat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

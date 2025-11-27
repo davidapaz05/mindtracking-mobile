@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-const API_BASE_URL = "http://44.220.11.145";
+const API_BASE_URL = "https://mindtracking-api-1.onrender.com";
 
 const api = axios.create({ baseURL: API_BASE_URL, timeout: 15000 });
 

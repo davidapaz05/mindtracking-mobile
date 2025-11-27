@@ -19,7 +19,7 @@ export default function LoginScreen() {
   const [sendingCode, setSendingCode] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
 
-  const API_BASE_URL = "http://44.220.11.145";
+  const API_BASE_URL = "https://mindtracking-api-1.onrender.com";
 
   const isAlreadyVerifiedMsg = (txt?: string) => {
     const m = String(txt || "").toLowerCase();

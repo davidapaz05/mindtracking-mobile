@@ -8,28 +8,16 @@ import {
   Pressable, StyleSheet, Text,
   TouchableOpacity, View
 } from 'react-native';
+import { setupInterceptors } from '../../service/api';
+import { saveProfilePhoto, uploadImageToCloudinary } from '../../service/profileService';
 import ButtonBase from "../components/common/button/button";
-import axios from 'axios';
 
 const { width, height } = Dimensions.get("window");
 const AVATAR_SIZE = width * 0.482;
 const EDIT_SIZE = AVATAR_SIZE * 0.24;
 
-const CLOUDINARY_UPLOAD_PRESET = "mindtracking";
-const CLOUDINARY_CLOUD_NAME = "danydlyeq";
-
-// Configuração axios com base URL e interceptor de token
-const api = axios.create({
-  baseURL: "http://44.220.11.145", // Ajuste se necessário
-});
-
-api.interceptors.request.use(async (config) => {
-  const token = await AsyncStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-}, (error) => Promise.reject(error));
+// Garante interceptors configurados (401 e token) neste fluxo
+setupInterceptors(null);
 
 export default function Perfil() {
   const router = useRouter();
@@ -52,55 +40,7 @@ export default function Perfil() {
     })();
   }, []);
 
-  async function uploadImageToCloudinary(uri: string): Promise<string | null> {
-    try {
-      setUploading(true);
-      const formData = new FormData();
-      formData.append("file", {
-        uri,
-        type: "image/jpeg",
-        name: "perfil.jpg",
-      } as any);
-      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`,
-        { method: "POST", body: formData }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Cloudinary upload error:", errorText);
-        Alert.alert("Erro no upload", "Falha ao enviar imagem para o servidor");
-        return null;
-      }
-
-      const data = await response.json();
-      return data.secure_url;
-    } catch (error) {
-      console.error("Erro upload Cloudinary:", error);
-      Alert.alert("Erro no upload", String(error));
-      return null;
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  // Atualiza backend usando axios com token automático
-  async function updateFotoUsuarioBackend(body: Object) {
-    try {
-      const response = await api.put("/auth/profile", body);
-      if (response.status === 200) {
-        console.log("Foto atualizada com sucesso:", response.data);
-      } else {
-        console.error("Falha na atualização:", response.status, response.data);
-        Alert.alert("Erro", "Não foi possível atualizar a foto no servidor");
-      }
-    } catch (error) {
-      console.error("Erro na requisição backend:", error);
-      Alert.alert("Erro", "Não foi possível atualizar a foto no servidor");
-    }
-  }
+  // Nenhuma função local de upload/atualização: usar service/profileService
 
   async function openPickerAndUpload() {
     try {
@@ -125,10 +65,12 @@ export default function Perfil() {
       setLocalUri(uri);
       setUploading(true);
 
-      const imageUrl = await uploadImageToCloudinary(uri);
+      const cloudRes = await uploadImageToCloudinary(uri, { folder: 'perfil', uploadPreset: 'mindtracking' });
+      const imageUrl = cloudRes?.secure_url;
       if (!imageUrl) throw new Error('Upload não retornou URL');
 
-      await updateFotoUsuarioBackend({ foto_perfil_url: imageUrl });
+      // Envia para backend salvar no usuário
+      await saveProfilePhoto(String(imageUrl));
       await AsyncStorage.setItem('foto', imageUrl);
       setLocalUri(imageUrl);
 

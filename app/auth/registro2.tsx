@@ -8,7 +8,7 @@ import InputGender from "../components/common/input/inputGenero";
 import PhoneInput from "../components/common/input/inputPhone";
 
 const { width, height } = Dimensions.get("window");
-const API_BASE_URL = "http://44.220.11.145";
+const API_BASE_URL = "https://mindtracking-api-1.onrender.com";
 
 function formatDateToIso(date: string) {
   if (!date) return "";

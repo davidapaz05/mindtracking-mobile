@@ -8,7 +8,8 @@ import api from "./api";
 const CLOUDINARY_CLOUD_NAME = "danydlyeq";
 const CLOUDINARY_API_KEY = "629517973345647";
 const CLOUDINARY_API_SECRET = "mALfsqQC8j3VACWOsJk3vE1GiQE";
-const CLOUDINARY_UPLOAD_PRESET = undefined; // optional unsigned preset
+// Use an unsigned upload preset to avoid client-side signatures
+const CLOUDINARY_UPLOAD_PRESET = "mindtracking"; // configure in Cloudinary
 
 /**
  * Upload an image (local URI) to Cloudinary and return the upload response.
@@ -110,8 +111,7 @@ function sha1(msg: string) {
  */
 export async function saveProfilePhoto(photoUrl: string) {
   try {
-    const resp = await api.post('/usuario/photo', { foto: photoUrl });
-    // persist locally for fast access
+    const resp = await api.put('/auth/profile', { foto_perfil_url: photoUrl });
     try {
       await AsyncStorage.setItem('foto', String(photoUrl));
     } catch (e) {
