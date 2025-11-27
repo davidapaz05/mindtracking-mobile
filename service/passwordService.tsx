@@ -25,4 +25,4 @@ export async function resetPassword(payload: Record<string, any>) {
   }
 }
 
-export default { recoverPassword, resetPassword };
+// Prefer named exports; barrel re-export in service/password/index.ts

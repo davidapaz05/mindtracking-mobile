@@ -20,4 +20,4 @@ export async function sendRecoveryCode(email: string) {
   }
 }
 
-export default { verifyEmail, sendRecoveryCode };
+// Prefer named exports; barrel re-export in service/verify/index.ts

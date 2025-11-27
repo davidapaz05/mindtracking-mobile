@@ -81,4 +81,4 @@ function decodeJwtPayload(token: string) {
   }
 }
 
-export default { fetchAndPersistProfileFromServerOrToken };
+// Prefer named exports; barrel re-export in service/user/index.ts

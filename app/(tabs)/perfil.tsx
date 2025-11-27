@@ -2,16 +2,17 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
-  Alert,
-  Dimensions,
-  Image,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Dimensions,
+    Image,
+    Modal,
+    Pressable,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
+import { getProfile } from "../../service/authService";
 import { recoverPassword } from "../../service/passwordService";
 import CardDenominado from "../components/cards/cardPerfil";
 import ButtonBase from "../components/common/button/button";
@@ -36,6 +37,29 @@ export default function Perfil() {
 
       async function loadProfilePreferLocal() {
         try {
+          // Primeiro tenta servidor para pegar foto atualizada
+          try {
+            const res = await getProfile();
+            const profile = res?.data || res?.user || res || null;
+            if (profile && mounted) {
+              const serverFoto = profile.foto_perfil_url || profile.foto || null;
+              const serverNome = profile.nome || profile.name || null;
+              const serverEmail = profile.email || null;
+              if (serverFoto) {
+                setFoto(String(serverFoto));
+                try { await AsyncStorage.setItem("foto", String(serverFoto)); } catch {}
+              }
+              if (serverNome) {
+                setNome(String(serverNome));
+                try { await AsyncStorage.setItem("nome", String(serverNome)); } catch {}
+              }
+              if (serverEmail) {
+                setEmail(String(serverEmail));
+                try { await AsyncStorage.setItem("email", String(serverEmail)); } catch {}
+              }
+            }
+          } catch {}
+
           const token = await AsyncStorage.getItem("token");
           if (token) {
             try {
@@ -86,7 +110,7 @@ export default function Perfil() {
                 const emailCandidates = ["email", "mail", "usuario_email"];
                 const phoneCandidates = ["numero", "phone", "phone_number", "celular", "telefone"];
                 const genderCandidates = ["genero", "gender", "sexo"];
-                const photoCandidates = ["foto", "foto_perfil_url", "profile_picture"];
+                const photoCandidates = ["foto", "foto_perfil_url", "profile_picture", "picture", "avatar"];
 
                 const serverNome = findFirstMatch(parsed, nameCandidates) ?? null;
                 const serverEmail = findFirstMatch(parsed, emailCandidates) ?? null;

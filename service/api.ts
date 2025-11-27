@@ -1,9 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import { ENV } from "../config/env";
 
-const API_BASE_URL = "https://mindtracking-api-1.onrender.com";
-
-const api = axios.create({ baseURL: API_BASE_URL, timeout: 15000 });
+const api = axios.create({ baseURL: ENV.API_BASE_URL, timeout: 15000 });
 
 export function setupInterceptors(router: any) {
   const reqId = api.interceptors.request.use(

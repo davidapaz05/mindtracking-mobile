@@ -29,4 +29,4 @@ export async function register(payload: Record<string, any>) {
 	}
 }
 
-export default { register };
+// Prefer named exports; barrel re-export in service/registro/index.ts

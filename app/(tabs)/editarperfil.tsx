@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import api from "../../service/api";
+import { getProfile, updateProfile } from "../../service/authService";
 import ButtonBase from "../components/common/button/button";
 import InputBase from "../components/common/input/inputBase";
 import BirthDateInput from "../components/common/input/inputData";
@@ -55,8 +55,8 @@ export default function EditarPerfilScreen() {
 
     const loadProfile = async () => {
       try {
-        const res = await api.get('/auth/profile');
-        const profile = res?.data?.data || res?.data?.user || res?.data || null;
+        const res = await getProfile();
+        const profile = res?.data || res?.user || res || null;
         if (!mounted || !profile) return;
         const nomeSrv = profile.nome ?? profile.name ?? "";
         const telefoneSrv = profile.telefone ?? profile.phone ?? "";
@@ -103,9 +103,9 @@ export default function EditarPerfilScreen() {
         telefone: telefoneSanitized,
       };
 
-      const response = await api.put("/auth/profile", payload);
+      const response = await updateProfile(payload);
 
-      if (response && (response.status === 200 || response.status === 201)) {
+      if (response && (response.success || response?.user || response?.data)) {
         
         try {
           await AsyncStorage.setItem("nome", String(nomeTrim));
@@ -116,7 +116,7 @@ export default function EditarPerfilScreen() {
 
         router.replace("/(tabs)/perfil");
       } else {
-        setError(response?.data?.message || "Erro ao salvar perfil");
+        setError(response?.message || "Erro ao salvar perfil");
       }
     } catch (err: any) {
       console.log("Erro ao atualizar perfil:", err);

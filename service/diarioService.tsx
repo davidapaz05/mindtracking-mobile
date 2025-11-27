@@ -35,4 +35,4 @@ export async function postDiario(payload: DiarioPayload) {
   }
 }
 
-export default { getAllDiarios, getDiarioById, postDiario };
+// Prefer named exports; barrel re-export in service/diario/index.ts

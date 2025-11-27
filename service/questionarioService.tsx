@@ -53,4 +53,4 @@ export async function getPontuacao(usuarioId: string | number) {
   }
 }
 
-export default { fetchQuestions, submitAnswers, verifyDaily, getPontuacao };
+// Prefer named exports; barrel re-export in service/questionario/index.ts
