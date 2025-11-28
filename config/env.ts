@@ -2,7 +2,7 @@
 // Prefer EXPO_PUBLIC_ variables for client-side usage
 
 export const ENV = {
-  API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL || "https://mindtracking-api-1.onrender.com/",
+  API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL || "http://52.5.7.244",
   CLOUDINARY_CLOUD_NAME: process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME || "danydlyeq",
   CLOUDINARY_UPLOAD_PRESET: process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "mindtracking",
 };

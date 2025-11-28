@@ -7,7 +7,7 @@ import InputBase from "../components/common/input/inputBase";
 
 const { width, height } = Dimensions.get("window");
 
-const API_BASE_URL = "https://mindtracking-api-1.onrender.com";
+const API_BASE_URL = "http://52.5.7.244";
 
 export default function Redefined1() {
   const router = useRouter();

@@ -15,7 +15,7 @@ export default function LoginScreen() {
   const fromParam = String(params.from || "");
   const emailParam = String(params.email || "");
 
-  const API_BASE_URL = "https://mindtracking-api-1.onrender.com";
+  const API_BASE_URL = "http://52.5.7.244";
 
   const [senha, setSenha] = useState("");
   const [confirmSenha, setConfirmSenha] = useState("");

@@ -1,3 +1,4 @@
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Dimensions, Image, StyleSheet, Text, View } from "react-native";
 import { register as registerService } from "../../service/registroService";
@@ -8,7 +9,7 @@ import InputGender from "../components/common/input/inputGenero";
 import PhoneInput from "../components/common/input/inputPhone";
 
 const { width, height } = Dimensions.get("window");
-const API_BASE_URL = "https://mindtracking-api-1.onrender.com";
+const API_BASE_URL = "http://52.5.7.244";
 
 function formatDateToIso(date: string) {
   if (!date) return "";
@@ -19,6 +20,8 @@ function formatDateToIso(date: string) {
 }
 
 export default function RegisterScreen2() {
+  const router = useRouter();
+  const params = useLocalSearchParams();
 
   const [nome, setNome] = useState("");
   const [dataNascimento, setDataNascimento] = useState("");
@@ -48,33 +51,39 @@ export default function RegisterScreen2() {
     else if (g === "outro") generoMapped = "outro";
     const telefoneSanitized = telefone.replace(/[^0-9+]/g, "").trim();
 
-    console.log("Enviando dados para registro/edição de perfil:", {
-      nome: nomeTrim,
-      data_nascimento: dataNascIso,
-      telefone: telefoneSanitized,
-      genero: generoMapped,
-    });
+    // Campos vindos da primeira etapa
+    const email = (params.email as string) || "";
+    const senha = (params.password as string) || (params.senha as string) || "";
+    const confirmarSenha = (params.confirmarSenha as string) || (params.confirmPassword as string) || "";
+
+    if (!email || !senha || !confirmarSenha) {
+      setError("Volte e preencha e-mail e senhas.");
+      return;
+    }
 
     try {
         const payload = {
           nome: nomeTrim,
+          email,
+          senha,
+          confirmarSenha,
           data_nascimento: dataNascIso,
           genero: generoMapped,
           telefone: telefoneSanitized,
         };
 
-        console.log("Payload enviado para registro/edição de perfil:", JSON.stringify(payload, null, 2));
+        console.log("Payload enviado para registro:", JSON.stringify(payload, null, 2));
 
         const response = await registerService(payload);
 
-        console.log("Resposta registro/edição data:", response);
+        console.log("Resposta registro:", response);
 
-        if (response && response.success) {
-          // Sucesso: aqui não redirecionamos com router (tela é usada para editar perfil);
-          // manter apenas log/estado. Se quiser, pode exibir uma notificação ou navegar.
+        if (response && (response.success || response.token)) {
           setError("");
+          // Após registrar, seguir para a tela de boas-vindas/questionário
+          router.replace("/auth/welcome");
         } else {
-          setError(response?.message || "Erro ao salvar perfil");
+          setError(response?.message || "Erro ao registrar");
         }
     } catch (error: any) {
       console.log("Erro no registro (erro):", error);
