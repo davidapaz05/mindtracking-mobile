@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { Image, ImageSourcePropType, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Alert, Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { exportUserPdf } from '../../../service/reportService';
 
 
 
@@ -413,9 +414,19 @@ export const ExportarJornadaCard: React.FC<ExportarJornadaCardProps> = ({
         <Image source={require('@assets/icons/recomendacao.png')} style={styles.icon} />
       </View>
       <Text style={styles.description}>{description}</Text>
-      <View style={styles.button}>
+      <TouchableOpacity
+        style={styles.button}
+        activeOpacity={0.8}
+        onPress={async () => {
+          try {
+            await exportUserPdf();
+          } catch (err: any) {
+            Alert.alert('Erro', err?.message || 'Não foi possível exportar o PDF');
+          }
+        }}
+      >
         <Text style={styles.buttonText}>Gerar Relatório em PDF</Text>
-      </View>
+      </TouchableOpacity>
     </View>
   );
 };

@@ -9,7 +9,7 @@ import InputGender from "../components/common/input/inputGenero";
 import PhoneInput from "../components/common/input/inputPhone";
 
 const { width, height } = Dimensions.get("window");
-const API_BASE_URL = "http://52.5.7.244";
+const API_BASE_URL = "http://3.132.241.219";
 
 function formatDateToIso(date: string) {
   if (!date) return "";

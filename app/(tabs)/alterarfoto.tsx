@@ -1,14 +1,14 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from 'react';
 import {
-  Alert, Dimensions,
-  Image,
-  Pressable, StyleSheet, Text,
-  TouchableOpacity, View
+    Alert, Dimensions,
+    Image,
+    Pressable, StyleSheet, Text,
+    TouchableOpacity, View
 } from 'react-native';
 import { setupInterceptors } from '../../service/api';
+import { getProfile } from '../../service/authService';
 import { saveProfilePhoto, uploadImageToCloudinary } from '../../service/profileService';
 import ButtonBase from "../components/common/button/button";
 
@@ -26,10 +26,7 @@ export default function Perfil() {
 
   useEffect(() => {
     (async () => {
-      const storedFoto = await AsyncStorage.getItem("foto");
-      if (storedFoto) {
-        setLocalUri(storedFoto);
-      }
+      // Não usar AsyncStorage para foto: virá do GET profile
 
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
@@ -65,14 +62,24 @@ export default function Perfil() {
       setLocalUri(uri);
       setUploading(true);
 
-      const cloudRes = await uploadImageToCloudinary(uri, { folder: 'perfil', uploadPreset: 'mindtracking' });
+      const cloudRes = await uploadImageToCloudinary(uri, { folder: 'perfil' });
       const imageUrl = cloudRes?.secure_url;
       if (!imageUrl) throw new Error('Upload não retornou URL');
 
       // Envia para backend salvar no usuário
       await saveProfilePhoto(String(imageUrl));
-      await AsyncStorage.setItem('foto', imageUrl);
-      setLocalUri(imageUrl);
+
+      // Refetch perfil para garantir persistência e sincronização imediata (sem storage)
+      try {
+        const res = await getProfile();
+        const profile = res?.data || res?.user || res || null;
+        const serverFoto = profile?.foto_perfil_url || profile?.foto || imageUrl;
+        const finalUrl = String(serverFoto || imageUrl) + `?t=${Date.now()}`;
+        setLocalUri(finalUrl);
+      } catch {
+        const busted = `${imageUrl}?t=${Date.now()}`;
+        setLocalUri(busted);
+      }
 
       Alert.alert('Sucesso', 'Foto atualizada com sucesso!');
       router.replace('/(tabs)/perfil');

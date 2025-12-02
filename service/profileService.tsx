@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ENV } from "../config/env";
 import api from "./api";
 
@@ -42,6 +41,7 @@ export async function uploadImageToCloudinary(uri: string, options?: { uploadPre
     throw new Error('Cloudinary upload preset não configurado');
   }
 
+  console.log('Cloudinary upload: url=', url, 'preset=', uploadPreset, 'folder=', options?.folder);
   const resp = await fetch(url, {
     method: 'POST',
     body: formData as any,
@@ -56,6 +56,7 @@ export async function uploadImageToCloudinary(uri: string, options?: { uploadPre
   }
 
   const data = await resp.json();
+  console.log('Cloudinary upload success: secure_url=', data?.secure_url);
   return data;
 }
 
@@ -70,15 +71,23 @@ export async function uploadImageToCloudinary(uri: string, options?: { uploadPre
  */
 export async function saveProfilePhoto(photoUrl: string) {
   try {
-    const resp = await api.put('/auth/profile', { foto_perfil_url: photoUrl });
+    let resp;
     try {
-      await AsyncStorage.setItem('foto', String(photoUrl));
-    } catch (e) {
-      // ignore storage errors
+      console.log('Saving photo to backend via /auth/profile');
+      resp = await api.put('/auth/profile', { foto_perfil_url: photoUrl });
+    } catch (err: any) {
+      if (err?.response?.status === 404 || err?.response?.status === 405) {
+        console.log('Fallback: saving photo via /api/auth/profile');
+        resp = await api.put('/api/auth/profile', { foto_perfil_url: photoUrl });
+      } else {
+        throw err;
+      }
     }
+    console.log('Backend save status:', resp?.status);
     return resp.data;
   } catch (err: any) {
     const message = err?.response?.data?.message || err?.message || 'Erro ao salvar foto no servidor';
+    console.log('saveProfilePhoto error:', message);
     throw new Error(message);
   }
 }

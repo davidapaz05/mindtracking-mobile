@@ -15,7 +15,7 @@ export default function LoginScreen() {
   const fromParam = String(params.from || "");
   const emailParam = String(params.email || "");
 
-  const API_BASE_URL = "http://52.5.7.244";
+  const API_BASE_URL = "http://3.132.241.219";
 
   const [senha, setSenha] = useState("");
   const [confirmSenha, setConfirmSenha] = useState("");

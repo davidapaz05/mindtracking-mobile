@@ -19,7 +19,7 @@ export default function LoginScreen() {
   const [sendingCode, setSendingCode] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
 
-  const API_BASE_URL = "http://52.5.7.244";
+  const API_BASE_URL = "http://3.132.241.219";
 
   const isAlreadyVerifiedMsg = (txt?: string) => {
     const m = String(txt || "").toLowerCase();

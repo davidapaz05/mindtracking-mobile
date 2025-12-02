@@ -8,13 +8,29 @@ export type UpdateProfilePayload = {
 };
 
 export async function getProfile() {
-  const res = await api.get('/auth/profile');
-  return res.data;
+  try {
+    const res = await api.get('/auth/profile');
+    return res.data;
+  } catch (err: any) {
+    if (err?.response?.status === 404 || err?.response?.status === 405) {
+      const res = await api.get('/api/auth/profile');
+      return res.data;
+    }
+    throw err;
+  }
 }
 
 export async function updateProfile(payload: UpdateProfilePayload) {
-  const res = await api.put('/auth/profile', payload);
-  return res.data;
+  try {
+    const res = await api.put('/auth/profile', payload);
+    return res.data;
+  } catch (err: any) {
+    if (err?.response?.status === 404 || err?.response?.status === 405) {
+      const res = await api.put('/api/auth/profile', payload);
+      return res.data;
+    }
+    throw err;
+  }
 }
 
 export default { getProfile, updateProfile };

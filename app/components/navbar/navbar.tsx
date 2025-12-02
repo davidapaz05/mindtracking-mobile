@@ -4,6 +4,7 @@ import {
     Dimensions,
     Image,
     StyleSheet,
+    Text,
     TouchableOpacity,
     View,
 } from "react-native";
@@ -21,9 +22,18 @@ const TABS = [
 
 type Props = {
   userPhoto?: string;
+  userName?: string;
 };
 
-export default function BottomNavbar({ userPhoto }: Props) {
+function getInitials(name?: string) {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  const first = parts[0]?.[0]?.toUpperCase() || "";
+  const second = parts.length > 1 ? parts[1]?.[0]?.toUpperCase() : "";
+  return `${first}${second}` || "?";
+}
+
+export default function BottomNavbar({ userPhoto, userName }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets(); // 👈 pega altura do sistema (Android/iOS)
@@ -45,14 +55,13 @@ export default function BottomNavbar({ userPhoto }: Props) {
             onPress={() => router.push(tab.route as any)}
           >
             {tab.name === "Profile" ? (
-              <Image
-                source={
-                  userPhoto
-                    ? { uri: userPhoto }
-                    : require("@assets/icons/perfil.png")
-                }
-                style={styles.profilePic}
-              />
+              userPhoto ? (
+                <Image source={{ uri: userPhoto }} style={styles.profilePic} />
+              ) : (
+                <View style={styles.initialsCircle}>
+                  <Text style={styles.initialsText}>{getInitials(userName)}</Text>
+                </View>
+              )
             ) : (
               <Image
                 source={tab.icon}
@@ -113,5 +122,17 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
+  },
+  initialsCircle: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#93C5FD", // azul claro
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  initialsText: {
+    color: "#0F172A",
+    fontWeight: "700",
   },
 });

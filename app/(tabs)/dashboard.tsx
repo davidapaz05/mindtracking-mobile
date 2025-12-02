@@ -2,20 +2,20 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  Dimensions,
-  Image,
-  LayoutChangeEvent,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    Image,
+    LayoutChangeEvent,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import {
-  AthenaCard,
-  ExportarJornadaCard,
-  InfoCard,
-  StatCard,
+    AthenaCard,
+    ExportarJornadaCard,
+    InfoCard,
+    StatCard,
 } from "../components/cards/cardDashboard1";
 import { GraficoCard } from "../components/cards/grafico";
 
@@ -69,7 +69,7 @@ export default function Dashboard() {
       if (!usuarioId || !token) return;
       try {
         const response = await fetch(
-          `http://52.5.7.244/questionario/historico/${usuarioId}`,
+          `http://3.132.241.219/questionario/historico/${usuarioId}`,
           {
             method: "GET",
             headers: {
@@ -97,7 +97,7 @@ export default function Dashboard() {
       if (!usuarioId || !token) return;
       try {
         const response = await fetch(
-          `http://52.5.7.244/questionario/diario/verificar/${usuarioId}`,
+          `http://3.132.241.219/questionario/diario/verificar/${usuarioId}`,
           {
             method: "GET",
             headers: {
@@ -125,7 +125,7 @@ export default function Dashboard() {
       if (!usuarioId || !token) return;
       try {
         const response = await fetch(
-          `http://52.5.7.244/questionario/pontuacao/${usuarioId}`,
+          `http://3.132.241.219/questionario/pontuacao/${usuarioId}`,
           {
             method: "GET",
             headers: {
@@ -152,7 +152,7 @@ export default function Dashboard() {
     async function fetchDica() {
       if (!token) return;
       try {
-        const response = await fetch("http://52.5.7.244/api/dica", {
+        const response = await fetch("http://3.132.241.219/api/dica", {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -185,7 +185,7 @@ export default function Dashboard() {
         return;
       }
       try {
-        const response = await fetch("http://52.5.7.244/api/diagnosticos", {
+        const response = await fetch("http://3.132.241.219/api/diagnosticos", {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -218,7 +218,7 @@ export default function Dashboard() {
       if (!usuarioId || !token) return;
       try {
         const response = await fetch(
-          `http://52.5.7.244/questionario/correlacoes/${usuarioId}`,
+          `http://3.132.241.219/questionario/correlacoes/${usuarioId}`,
           {
             method: "GET",
             headers: {
@@ -411,7 +411,7 @@ export default function Dashboard() {
           description={
             conversasTotal && conversasTotal > 0
               ? `${conversasTotal} conversas até agora.`
-              : "Que tal conversar com athena¹"
+              : "Que tal conversar com athena!"
           }
           onPress={() => router.push("/(tabs)/ia")}
           testID="athena-card"

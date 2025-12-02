@@ -11,6 +11,8 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import { getProfile } from "../../service/authService";
+import { exportUserPdf } from "../../service/reportService";
 import FeatureCard from "../components/cards/card1";
 import InfoCard from "../components/cards/card2";
 
@@ -24,6 +26,7 @@ export default function Dashboard() {
   const router = useRouter();
   const [done, setDone] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [foto, setFoto] = useState<string | undefined>(undefined);
 
   // Adiciona estado para data atual do sistema
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -41,6 +44,21 @@ export default function Dashboard() {
       let active = true;
       (async () => {
         try {
+          // Atualiza avatar pelo backend primeiro
+          try {
+            const res = await getProfile();
+            const profile = res?.data || res?.user || res || null;
+            const serverFoto = profile?.foto_perfil_url || profile?.foto || null;
+            if (serverFoto && active) {
+              const busted = `${String(serverFoto)}?t=${Date.now()}`;
+              setFoto(busted);
+            } else if (active) {
+              setFoto(undefined);
+            }
+          } catch {
+            if (active) setFoto(undefined);
+          }
+
           const last = await AsyncStorage.getItem("diario_last_done");
           const showFlag = await AsyncStorage.getItem("diario_show_modal");
           const today = new Date().toISOString().slice(0, 10);
@@ -96,7 +114,7 @@ export default function Dashboard() {
               </Text>
             </View>
             <Image
-              source={{ uri: "https://i.pravatar.cc/100" }}
+              source={foto ? { uri: foto } : undefined}
               style={styles.avatar}
             />
           </View>
@@ -137,7 +155,17 @@ export default function Dashboard() {
           <View style={styles.infoList}>
             <InfoCard variant="diario" />
             <InfoCard variant="recomendacao" />
-            <InfoCard variant="apoio" />
+            <InfoCard
+              variant="apoio"
+              onPress={async () => {
+                try {
+                  setShowModal(false);
+                  await exportUserPdf();
+                } catch (err: any) {
+                  console.log("Exportar PDF erro:", err?.message || err);
+                }
+              }}
+            />
           </View>
 
           <View style={{ height: height * 0.05 }} />

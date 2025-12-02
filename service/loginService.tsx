@@ -49,7 +49,18 @@ async function saveUserToAsyncStorage(obj: Record<string, any>) {
  */
 export async function login(email: string, senha: string) {
   try {
-    const response = await api.post("/auth/login", { email, senha });
+    let response;
+    try {
+      response = await api.post("/auth/login", { email, senha });
+    } catch (err: any) {
+      const status = err?.response?.status;
+      // Fallback para backends que expõem as rotas sob /api
+      if (status === 404 || status === 405) {
+        response = await api.post("/api/auth/login", { email, senha });
+      } else {
+        throw err;
+      }
+    }
 
     if (!response?.data) {
       throw new Error("Resposta inválida do servidor.");
@@ -80,10 +91,7 @@ export async function login(email: string, senha: string) {
 
     return response.data;
   } catch (err: any) {
-    const message =
-      err?.response?.data?.message ||
-      err?.message ||
-      "Erro desconhecido ao fazer login.";
+    const message = err?.response?.data?.message || err?.message || "Erro desconhecido ao fazer login.";
     throw new Error(message);
   }
 }

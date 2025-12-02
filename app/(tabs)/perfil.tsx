@@ -10,7 +10,7 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
 import { getProfile } from "../../service/authService";
 import { recoverPassword } from "../../service/passwordService";
@@ -25,6 +25,7 @@ const EDIT_SIZE = AVATAR_SIZE * 0.24;
 export default function Perfil() {
   const router = useRouter();
   const [showLogoutModal, setShowLogoutModal] = React.useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
   const [nome, setNome] = useState<string | null>(null);
   const [foto, setFoto] = useState<string | null>(null);
@@ -46,8 +47,8 @@ export default function Perfil() {
               const serverNome = profile.nome || profile.name || null;
               const serverEmail = profile.email || null;
               if (serverFoto) {
-                setFoto(String(serverFoto));
-                try { await AsyncStorage.setItem("foto", String(serverFoto)); } catch {}
+                const busted = `${String(serverFoto)}?t=${Date.now()}`;
+                setFoto(busted);
               }
               if (serverNome) {
                 setNome(String(serverNome));
@@ -120,7 +121,6 @@ export default function Perfil() {
 
                 const nomeLocal = await AsyncStorage.getItem("nome");
                 const emailLocal = await AsyncStorage.getItem("email");
-                const fotoLocal = await AsyncStorage.getItem("foto");
 
                 if (mounted) {
                   setNome(serverNome ?? nomeLocal ?? "");
@@ -128,28 +128,28 @@ export default function Perfil() {
                   else if (emailLocal) setEmail(emailLocal);
                   if (serverNumero) setNumero(String(serverNumero));
                   if (serverGenero) setGenero(String(serverGenero));
-                  if (serverFoto) setFoto(String(serverFoto));
-                  else if (fotoLocal) setFoto(fotoLocal);
+                  if (serverFoto) {
+                    const busted = `${String(serverFoto)}?t=${Date.now()}`;
+                    setFoto(busted);
+                  }
                 }
 
                 try {
                   if (serverNome) await AsyncStorage.setItem("nome", String(serverNome));
                   if (serverEmail) await AsyncStorage.setItem("email", String(serverEmail));
-                  if (serverFoto) await AsyncStorage.setItem("foto", String(serverFoto));
                 } catch {}
               }
             } catch {}
           } else {
             // No token fallback to local storage
-            const [n, e, f] = await Promise.all([
+            const [n, e] = await Promise.all([
               AsyncStorage.getItem("nome"),
               AsyncStorage.getItem("email"),
-              AsyncStorage.getItem("foto"),
             ]);
             if (mounted) {
               if (n) setNome(n);
               if (e) setEmail(e);
-              if (f) setFoto(f);
+              // Foto não vem de storage: sempre via GET profile
             }
           }
         } catch {}
@@ -216,54 +216,7 @@ export default function Perfil() {
         <CardDenominado tipo="sairDaConta" onPress={() => setShowLogoutModal(true)} />
       </View>
 
-      <View style={{ paddingHorizontal: width * 0.07, marginTop: 16 }}>
-        <TouchableOpacity
-          style={styles.debugBtn}
-          onPress={async () => {
-            try {
-              const token = await AsyncStorage.getItem("token");
-              const nomeStored = await AsyncStorage.getItem("nome");
-              const emailStored = await AsyncStorage.getItem("email");
-              const fotoStored = await AsyncStorage.getItem("foto");
-              const usuarioId = await AsyncStorage.getItem("usuario_id");
-              let parsed: any = null;
-              if (token) {
-                try {
-                  const parts = token.split(".");
-                  if (parts.length >= 2) {
-                    const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-                    const pad = b64.length % 4;
-                    const withPad = pad === 0 ? b64 : b64 + "=".repeat(4 - pad);
-                    const atobFn = (global as any).atob || (globalThis as any).atob;
-                    let decoded = "";
-                    if (typeof atobFn === "function") decoded = atobFn(withPad);
-                    else if (typeof (global as any).Buffer !== "undefined")
-                      decoded = (global as any).Buffer.from(withPad, "base64").toString("utf8");
-                    try {
-                      parsed = JSON.parse(decoded);
-                    } catch {
-                      parsed = decoded;
-                    }
-                  }
-                } catch {}
-              }
-
-              Alert.alert(
-                "Profile Debug",
-                JSON.stringify(
-                  { token: !!token, parsed, nomeStored, emailStored, fotoStored, usuarioId },
-                  null,
-                  2
-                )
-              );
-            } catch (err) {
-              Alert.alert("Erro", String(err));
-            }
-          }}
-        >
-          <Text style={styles.debugText}>Debug Profile</Text>
-        </TouchableOpacity>
-      </View>
+      
 
       <Modal
         visible={showLogoutModal}
@@ -285,12 +238,29 @@ export default function Perfil() {
               title="Sim"
               onPress={async () => {
                 try {
-                  await AsyncStorage.removeItem("token");
+                  // Limpa AsyncStorage
                   try {
-                    await AsyncStorage.removeItem("email");
-                    await AsyncStorage.removeItem("nome");
-                    await AsyncStorage.removeItem("foto");
+                    await AsyncStorage.multiRemove([
+                      "token",
+                      "email",
+                      "nome",
+                      "foto",
+                      "usuario_id",
+                      "telefone",
+                      "genero",
+                      "questionario_pending",
+                      "data_nascimento",
+                    ]);
                   } catch {}
+
+                  // Limpa localStorage (quando disponível, ex.: web)
+                  try {
+                    const ls = (globalThis as any)?.localStorage;
+                    if (ls && typeof ls.clear === "function") {
+                      ls.clear();
+                    }
+                  } catch {}
+
                   setShowLogoutModal(false);
                   router.replace("/auth/login");
                 } catch (err: any) {
@@ -302,6 +272,8 @@ export default function Perfil() {
           </View>
         </View>
       </Modal>
+
+      {/* Loader para exportação de PDF removido do Perfil */}
     </View>
   );
 }
@@ -389,16 +361,7 @@ const styles = StyleSheet.create({
     fontSize: Math.max(width * 0.03, 14),
     marginTop: width * 0.01,
   },
-  debugBtn: {
-    backgroundColor: "#374151",
-    paddingVertical: 10,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  debugText: {
-    color: "#fff",
-    fontFamily: "Inter_600SemiBold",
-  },
+  
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",

@@ -7,7 +7,7 @@ import InputBase from "../components/common/input/inputBase";
 
 const { width, height } = Dimensions.get("window");
 
-const API_BASE_URL = "http://52.5.7.244";
+const API_BASE_URL = "http://3.132.241.219";
 
 export default function Redefined1() {
   const router = useRouter();
