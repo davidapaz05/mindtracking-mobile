@@ -142,14 +142,15 @@ export default function Perfil() {
             } catch {}
           } else {
             // No token fallback to local storage
-            const [n, e] = await Promise.all([
+            const [n, e, f] = await Promise.all([
               AsyncStorage.getItem("nome"),
               AsyncStorage.getItem("email"),
+              AsyncStorage.getItem("foto"),
             ]);
             if (mounted) {
               if (n) setNome(n);
               if (e) setEmail(e);
-              // Foto não vem de storage: sempre via GET profile
+              if (f) setFoto(f);
             }
           }
         } catch {}

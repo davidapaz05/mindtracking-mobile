@@ -1,11 +1,12 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from 'react';
 import {
-    Alert, Dimensions,
-    Image,
-    Pressable, StyleSheet, Text,
-    TouchableOpacity, View
+  Alert, Dimensions,
+  Image,
+  Pressable, StyleSheet, Text,
+  TouchableOpacity, View
 } from 'react-native';
 import { setupInterceptors } from '../../service/api';
 import { getProfile } from '../../service/authService';
@@ -62,12 +63,31 @@ export default function Perfil() {
       setLocalUri(uri);
       setUploading(true);
 
-      const cloudRes = await uploadImageToCloudinary(uri, { folder: 'perfil' });
+      // Try to get current user id to generate a unique public_id for Cloudinary
+      let publicId: string | undefined = undefined;
+      try {
+        const profRes = await getProfile();
+        const prof = profRes?.data || profRes?.user || profRes || null;
+        const uid = prof?.id || prof?.usuario_id || prof?.user_id || prof?.usuario || prof?.uuid || null;
+        publicId = `perfil_${String(uid ?? 'anon')}_${Date.now()}`;
+      } catch (e) {
+        // ignore - we'll fallback to timestamp-only public id
+        publicId = `perfil_${Date.now()}`;
+      }
+
+      const cloudRes = await uploadImageToCloudinary(uri, { folder: 'perfil', public_id: publicId });
       const imageUrl = cloudRes?.secure_url;
       if (!imageUrl) throw new Error('Upload não retornou URL');
 
       // Envia para backend salvar no usuário
       await saveProfilePhoto(String(imageUrl));
+
+      // Save locally as an optimistic fallback so profile shows the new image
+      try {
+        const busted = `${String(imageUrl)}?t=${Date.now()}`;
+        await AsyncStorage.setItem('foto', busted);
+        setLocalUri(busted);
+      } catch {}
 
       // Refetch perfil para garantir persistência e sincronização imediata (sem storage)
       try {

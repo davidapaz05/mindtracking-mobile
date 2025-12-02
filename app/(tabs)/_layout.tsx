@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Slot, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import { getProfile } from "../../service/authService";
@@ -12,10 +13,26 @@ export default function TabsLayout() {
       const res = await getProfile();
       const profile = res?.data || res?.user || res || null;
       const p = profile?.foto_perfil_url || profile?.foto || undefined;
-      setUserPhoto(p ? `${String(p)}?t=${Date.now()}` : undefined);
+      // Prefer a locally-stored optimistic foto if present (avoids navbar desync)
+      try {
+        const f = await AsyncStorage.getItem('foto');
+        if (f) {
+          setUserPhoto(f);
+        } else {
+          setUserPhoto(p ? `${String(p)}?t=${Date.now()}` : undefined);
+        }
+      } catch (e) {
+        setUserPhoto(p ? `${String(p)}?t=${Date.now()}` : undefined);
+      }
       setUserName(profile?.nome || profile?.name || undefined);
     } catch (err: any) {
       console.log("TabsLayout: getProfile failed:", err?.message || err);
+      try {
+        const f = await AsyncStorage.getItem('foto');
+        if (f) setUserPhoto(f);
+      } catch (e) {
+        // ignore
+      }
     }
   }, []);
 

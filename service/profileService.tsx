@@ -71,23 +71,44 @@ export async function uploadImageToCloudinary(uri: string, options?: { uploadPre
  */
 export async function saveProfilePhoto(photoUrl: string) {
   try {
-    let resp;
-    try {
-      console.log('Saving photo to backend via /auth/profile');
-      resp = await api.put('/auth/profile', { foto_perfil_url: photoUrl });
-    } catch (err: any) {
-      if (err?.response?.status === 404 || err?.response?.status === 405) {
-        console.log('Fallback: saving photo via /api/auth/profile');
-        resp = await api.put('/api/auth/profile', { foto_perfil_url: photoUrl });
-      } else {
-        throw err;
+    // Try multiple combinations to maximize compatibility with different backends
+    const endpoints = ['/auth/profile', '/api/auth/profile'];
+    const methods: Array<'put' | 'patch' | 'post'> = ['put', 'patch', 'post'];
+    const keys = ['foto_perfil_url', 'foto', 'foto_perfil', 'profile_picture', 'picture', 'avatar'];
+
+    let lastErr: any = null;
+    for (const endpoint of endpoints) {
+      for (const method of methods) {
+        for (const key of keys) {
+          try {
+            const payload: any = { [key]: photoUrl };
+            console.log(`Attempting ${method.toUpperCase()} ${endpoint} with payload key=${key}`);
+            const resp = await (api as any)[method](endpoint, payload, {
+              headers: { 'Content-Type': 'application/json' },
+            });
+            console.log('Backend save succeeded:', endpoint, method, key, 'status=', resp?.status);
+            return resp.data;
+          } catch (err: any) {
+            lastErr = err;
+            const status = err?.response?.status;
+            console.log(`Attempt failed: ${method.toUpperCase()} ${endpoint} key=${key} status=${status} message=${err?.message}`);
+            // If 404/405 move to next endpoint; otherwise continue trying other combinations
+            if (status === 404 || status === 405) break; // break keys loop, try next endpoint
+            // continue trying other keys/methods
+          }
+        }
       }
     }
-    console.log('Backend save status:', resp?.status);
-    return resp.data;
+    // If we reach here, all attempts failed
+    if (lastErr) {
+      const message = lastErr?.response?.data?.message || lastErr?.message || 'Erro ao salvar foto no servidor';
+      console.log('saveProfilePhoto final error:', message);
+      throw new Error(message);
+    }
+    throw new Error('Não foi possível salvar a foto no servidor');
   } catch (err: any) {
     const message = err?.response?.data?.message || err?.message || 'Erro ao salvar foto no servidor';
-    console.log('saveProfilePhoto error:', message);
+    console.log('saveProfilePhoto error (outer):', message);
     throw new Error(message);
   }
 }
