@@ -9,15 +9,36 @@ type DiarioType = {
   texto: string;
 };
 
-export default function CardDiario({ diario, onAnalyze }: { diario: DiarioType; onAnalyze?: () => void }) {
-  const displayDate = (() => {
-    if (diario.data && String(diario.data).trim().length > 0) return String(diario.data);
-    try {
-      return new Date().toLocaleString();
-    } catch (e) {
-      return String(diario.data ?? "");
+// Função para formatar data de forma legível (DD/MM/YYYY HH:MM)
+const formatData = (dataString: string): string => {
+  if (!dataString || String(dataString).trim().length === 0) {
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, "0");
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const year = now.getFullYear();
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  }
+
+  try {
+    const date = new Date(dataString);
+    if (Number.isNaN(date.getTime())) {
+      return String(dataString);
     }
-  })();
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  } catch (e) {
+    return String(dataString);
+  }
+};
+
+export default function CardDiario({ diario, onAnalyze }: { diario: DiarioType; onAnalyze?: () => void }) {
+  const displayDate = formatData(diario.data);
 
   return (
     <View style={styles.card}>

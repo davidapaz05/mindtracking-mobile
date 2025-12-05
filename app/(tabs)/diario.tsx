@@ -13,7 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import diarioService from "../../service/diarioService";
+import { getAllDiarios, getDiarioById, postDiario } from "../../service/diarioService";
 import CardDiario from "../components/cards/cardDiario";
 
 const { width, height } = Dimensions.get("window");
@@ -104,7 +104,7 @@ export default function Diario() {
 
     async function loadDiarios() {
       try {
-        const resp = await diarioService.getAllDiarios();
+        const resp = await getAllDiarios();
         const list = normalizeDiarios(resp);
         if (mounted) {
           setDiarios(list);
@@ -136,7 +136,7 @@ export default function Diario() {
       setModalAnaliseVisivel(true);
       try {
         if (item && item.id) {
-          const resp = await diarioService.getDiarioById(String(item.id));
+          const resp = await getDiarioById(String(item.id));
           const itens = normalizeDiarios(resp);
           setSelectedDiario(itens.length ? itens[0] : item);
         } else {
@@ -184,7 +184,7 @@ export default function Diario() {
         return;
       }
       const payload = { titulo: tituloDiario.trim(), texto: textoDiario };
-      const resp = await diarioService.postDiario(payload);
+      const resp = await postDiario(payload);
       const createdItens = normalizeDiarios(resp);
       if (createdItens.length > 0) {
         // Atualiza lista
