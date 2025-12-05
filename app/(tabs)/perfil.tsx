@@ -14,11 +14,11 @@ import {
 } from "react-native";
 import { getProfile } from "../../service/authService";
 import { recoverPassword } from "../../service/passwordService";
-import { useProfilePhoto } from "../hooks/useProfilePhoto";
-import Avatar from "../components/common/Avatar";
 import CardDenominado from "../components/cards/cardPerfil";
+import Avatar from "../components/common/Avatar";
 import ButtonBase from "../components/common/button/button";
 import ButtonBase2 from "../components/common/button/button2";
+import { useProfilePhoto } from "../hooks/useProfilePhoto";
 
 const { width, height } = Dimensions.get("window");
 const AVATAR_SIZE = width * 0.442;
