@@ -8,6 +8,7 @@ import InputBase from "../components/common/input/inputBase";
 import BirthDateInput from "../components/common/input/inputData";
 import InputGender from "../components/common/input/inputGenero";
 import PhoneInput from "../components/common/input/inputPhone";
+import { useProfilePhoto } from "../hooks/useProfilePhoto";
 
 const { width, height } = Dimensions.get("window");
 const API_BASE_URL = "http://3.132.241.219";
@@ -23,6 +24,7 @@ function formatDateToIso(date: string) {
 export default function EditarPerfilScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { updatePhoto, loadPhotoFromServer } = useProfilePhoto();
 
   console.log("Params vindos da tela 1:", params);
 
@@ -112,6 +114,11 @@ export default function EditarPerfilScreen() {
           await AsyncStorage.setItem("telefone", String(telefoneSanitized));
           if (generoMapped) await AsyncStorage.setItem("genero", String(generoMapped));
           if (dataNascIso) await AsyncStorage.setItem("data_nascimento", String(dataNascIso));
+        } catch {}
+
+        // Atualiza o hook com o novo nome
+        try {
+          await loadPhotoFromServer();
         } catch {}
 
         router.replace("/(tabs)/perfil");

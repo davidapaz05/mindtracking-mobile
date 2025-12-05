@@ -3,16 +3,16 @@ import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
     Dimensions,
-    Image,
     Modal,
     SafeAreaView,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
 import FeatureCard from "../components/cards/card1";
 import InfoCard from "../components/cards/card2";
+import Avatar from "../components/common/Avatar";
 import { useProfilePhoto } from "../hooks/useProfilePhoto";
 
 const { width, height } = Dimensions.get("window");
@@ -23,10 +23,9 @@ const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julh
 
 export default function Dashboard() {
   const router = useRouter();
-  const { photo: fotoFromHook, loadPhotoFromServer } = useProfilePhoto();
+  const { photo: fotoFromHook, name: nomeFromHook, loadPhotoFromServer } = useProfilePhoto();
   const [done, setDone] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [foto, setFoto] = useState<string | undefined>(fotoFromHook ?? undefined);
 
   // Adiciona estado para data atual do sistema
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -44,12 +43,10 @@ export default function Dashboard() {
       let active = true;
       (async () => {
         try {
-          // Atualiza avatar pelo hook
-          loadPhotoFromServer().then((photoUrl) => {
-            if (active) {
-              setFoto(photoUrl ?? undefined);
-            }
-          });
+          // Carrega dados frescos do servidor quando tela ganha foco
+          if (active) {
+            await loadPhotoFromServer();
+          }
 
           const last = await AsyncStorage.getItem("diario_last_done");
           const showFlag = await AsyncStorage.getItem("diario_show_modal");
@@ -105,10 +102,7 @@ export default function Dashboard() {
                 {dia} de {mes}
               </Text>
             </View>
-            <Image
-              source={foto ? { uri: foto } : undefined}
-              style={styles.avatar}
-            />
+            <Avatar photo={fotoFromHook} name={nomeFromHook} size="small" />
           </View>
 
           {/* PERGUNTA */}

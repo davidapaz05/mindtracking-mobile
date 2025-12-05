@@ -38,9 +38,14 @@ export function useProfilePhoto() {
           return busted;
         } else {
           setPhoto(null);
-          setName(null);
+          // Atualiza nome mesmo sem foto (importante para sincronizar mudanças de nome)
+          setName(serverName ? String(serverName) : null);
           await AsyncStorage.removeItem(PHOTO_CACHE_KEY);
-          photoListeners.forEach(listener => listener(null, null));
+          if (serverName) {
+            await AsyncStorage.setItem(NAME_CACHE_KEY, String(serverName));
+          }
+          // Notifica todos os listeners mesmo sem foto
+          photoListeners.forEach(listener => listener(null, serverName ? String(serverName) : null));
           return null;
         }
       }
@@ -67,29 +72,7 @@ export function useProfilePhoto() {
     return null;
   }, []);
 
-  // Monitora mudanças no cache do AsyncStorage
-  const monitorCacheChanges = useCallback(() => {
-    const checkForUpdates = async () => {
-      try {
-        const newPhoto = await AsyncStorage.getItem(PHOTO_CACHE_KEY);
-        const newName = await AsyncStorage.getItem(NAME_CACHE_KEY);
-        
-        setPhoto((prevPhoto) => {
-          if (newPhoto !== prevPhoto) {
-            setName(newName);
-            photoListeners.forEach(listener => listener(newPhoto, newName));
-            return newPhoto;
-          }
-          return prevPhoto;
-        });
-      } catch (error) {
-        console.log("Error monitoring cache:", error);
-      }
-    };
 
-    const interval = setInterval(checkForUpdates, 500);
-    return () => clearInterval(interval);
-  }, []);
 
   // Inicializa e monitora
   useEffect(() => {
@@ -127,10 +110,7 @@ export function useProfilePhoto() {
     };
   }, []);
 
-  // Monitora cache a cada 500ms
-  useEffect(() => {
-    return monitorCacheChanges();
-  }, [monitorCacheChanges]);
+
 
   // Registra este hook como listener
   useEffect(() => {
