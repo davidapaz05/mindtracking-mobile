@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Dimensions, Image, StyleSheet, Text, View } from "react-native";
@@ -80,8 +81,14 @@ export default function RegisterScreen2() {
 
         if (response && (response.success || response.token)) {
           setError("");
-          // Após registrar, seguir para a tela de boas-vindas/questionário
-          router.replace("/auth/welcome");
+          // Salvar dados no AsyncStorage
+          await AsyncStorage.setItem("email", email);
+          await AsyncStorage.setItem("nome", nomeTrim);
+          // Após registrar, seguir para a tela de confirmação de email
+          router.push({
+            pathname: "/auth/confirm-code",
+            params: { email, from: "register" },
+          });
         } else {
           setError(response?.message || "Erro ao registrar");
         }
