@@ -14,6 +14,8 @@ import {
 } from "react-native";
 import { getProfile } from "../../service/authService";
 import { recoverPassword } from "../../service/passwordService";
+import { useProfilePhoto } from "../hooks/useProfilePhoto";
+import Avatar from "../components/common/Avatar";
 import CardDenominado from "../components/cards/cardPerfil";
 import ButtonBase from "../components/common/button/button";
 import ButtonBase2 from "../components/common/button/button2";
@@ -24,42 +26,35 @@ const EDIT_SIZE = AVATAR_SIZE * 0.24;
 
 export default function Perfil() {
   const router = useRouter();
+  const { photo: photoFromHook, name: nameFromHook, loadPhotoFromServer, clearPhoto } = useProfilePhoto();
   const [showLogoutModal, setShowLogoutModal] = React.useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
-  const [nome, setNome] = useState<string | null>(null);
-  const [foto, setFoto] = useState<string | null>(null);
+  const [nome, setNome] = useState<string | null>(nameFromHook || null);
   const [numero, setNumero] = useState<string | null>(null);
   const [genero, setGenero] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       let mounted = true;
+      loadPhotoFromServer();
 
-      async function loadProfilePreferLocal() {
+      async function loadProfile() {
         try {
-          // Primeiro tenta servidor para pegar foto atualizada
-          try {
-            const res = await getProfile();
-            const profile = res?.data || res?.user || res || null;
-            if (profile && mounted) {
-              const serverFoto = profile.foto_perfil_url || profile.foto || null;
-              const serverNome = profile.nome || profile.name || null;
-              const serverEmail = profile.email || null;
-              if (serverFoto) {
-                const busted = `${String(serverFoto)}?t=${Date.now()}`;
-                setFoto(busted);
-              }
-              if (serverNome) {
-                setNome(String(serverNome));
-                try { await AsyncStorage.setItem("nome", String(serverNome)); } catch {}
-              }
-              if (serverEmail) {
-                setEmail(String(serverEmail));
-                try { await AsyncStorage.setItem("email", String(serverEmail)); } catch {}
-              }
+          const res = await getProfile();
+          const profile = res?.data || res?.user || res || null;
+          if (profile && mounted) {
+            const serverNome = profile.nome || profile.name || null;
+            const serverEmail = profile.email || null;
+            if (serverNome) {
+              setNome(String(serverNome));
+              try { await AsyncStorage.setItem("nome", String(serverNome)); } catch {}
             }
-          } catch {}
+            if (serverEmail) {
+              setEmail(String(serverEmail));
+              try { await AsyncStorage.setItem("email", String(serverEmail)); } catch {}
+            }
+          }
 
           const token = await AsyncStorage.getItem("token");
           if (token) {
@@ -98,26 +93,15 @@ export default function Perfil() {
                   return null;
                 };
 
-                const nameCandidates = [
-                  "nome",
-                  "name",
-                  "fullName",
-                  "full_name",
-                  "username",
-                  "usuario",
-                  "user",
-                  "given_name",
-                ];
+                const nameCandidates = ["nome", "name", "fullName", "full_name", "username", "usuario", "user", "given_name"];
                 const emailCandidates = ["email", "mail", "usuario_email"];
                 const phoneCandidates = ["numero", "phone", "phone_number", "celular", "telefone"];
                 const genderCandidates = ["genero", "gender", "sexo"];
-                const photoCandidates = ["foto", "foto_perfil_url", "profile_picture", "picture", "avatar"];
 
                 const serverNome = findFirstMatch(parsed, nameCandidates) ?? null;
                 const serverEmail = findFirstMatch(parsed, emailCandidates) ?? null;
                 const serverNumero = findFirstMatch(parsed, phoneCandidates) ?? null;
                 const serverGenero = findFirstMatch(parsed, genderCandidates) ?? null;
-                const serverFoto = findFirstMatch(parsed, photoCandidates) ?? null;
 
                 const nomeLocal = await AsyncStorage.getItem("nome");
                 const emailLocal = await AsyncStorage.getItem("email");
@@ -128,10 +112,6 @@ export default function Perfil() {
                   else if (emailLocal) setEmail(emailLocal);
                   if (serverNumero) setNumero(String(serverNumero));
                   if (serverGenero) setGenero(String(serverGenero));
-                  if (serverFoto) {
-                    const busted = `${String(serverFoto)}?t=${Date.now()}`;
-                    setFoto(busted);
-                  }
                 }
 
                 try {
@@ -141,27 +121,24 @@ export default function Perfil() {
               }
             } catch {}
           } else {
-            // No token fallback to local storage
-            const [n, e, f] = await Promise.all([
+            const [n, e] = await Promise.all([
               AsyncStorage.getItem("nome"),
               AsyncStorage.getItem("email"),
-              AsyncStorage.getItem("foto"),
             ]);
             if (mounted) {
               if (n) setNome(n);
               if (e) setEmail(e);
-              if (f) setFoto(f);
             }
           }
         } catch {}
       }
 
-      loadProfilePreferLocal();
+      loadProfile();
 
       return () => {
         mounted = false;
       };
-    }, [])
+    }, [loadPhotoFromServer])
   );
 
   return (
@@ -177,10 +154,7 @@ export default function Perfil() {
       </View>
       <View style={styles.topo}>
         <View style={styles.avatarWrapper}>
-          <Image
-            source={foto ? { uri: foto } : undefined}
-            style={styles.avatar}
-          />
+          <Avatar photo={photoFromHook} name={nameFromHook} size="large" />
           <Pressable style={styles.editButton} onPress={() => router.push("/(tabs)/alterarfoto")}>
             <View style={styles.editCircle}>
               <Image source={require("@assets/icons/Edit.png")} style={styles.editIcon} />
@@ -239,6 +213,9 @@ export default function Perfil() {
               title="Sim"
               onPress={async () => {
                 try {
+                  // Limpa foto do hook
+                  await clearPhoto();
+                  
                   // Limpa AsyncStorage
                   try {
                     await AsyncStorage.multiRemove([
@@ -322,13 +299,6 @@ const styles = StyleSheet.create({
     position: "relative",
     alignItems: "center",
     justifyContent: "center",
-  },
-  avatar: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
-    borderWidth: 3,
-    borderColor: "#1E293B",
   },
   editButton: {
     position: "absolute",

@@ -4,11 +4,11 @@ import {
     Dimensions,
     Image,
     StyleSheet,
-    Text,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Avatar from "../common/Avatar";
 
 const { width, height } = Dimensions.get("window");
 
@@ -36,8 +36,7 @@ function getInitials(name?: string) {
 export default function BottomNavbar({ userPhoto, userName }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const insets = useSafeAreaInsets(); // 👈 pega altura do sistema (Android/iOS)
-  // Não mostrar a navbar em telas específicas (ex.: editar perfil)
+  const insets = useSafeAreaInsets();
   const hideOnPaths = ["/(tabs)/editarperfil", "/editarperfil"];
   if (pathname && hideOnPaths.some(p => pathname.includes(p))) return null;
 
@@ -46,8 +45,6 @@ export default function BottomNavbar({ userPhoto, userName }: Props) {
       {TABS.map((tab, index) => {
         const isActive = pathname.includes(tab.route) || tab.route.includes(pathname);
 
-
-
         return (
           <TouchableOpacity
             key={index}
@@ -55,13 +52,7 @@ export default function BottomNavbar({ userPhoto, userName }: Props) {
             onPress={() => router.push(tab.route as any)}
           >
             {tab.name === "Profile" ? (
-              userPhoto ? (
-                <Image source={{ uri: userPhoto }} style={styles.profilePic} />
-              ) : (
-                <View style={styles.initialsCircle}>
-                  <Text style={styles.initialsText}>{getInitials(userName)}</Text>
-                </View>
-              )
+              <Avatar photo={userPhoto} name={userName} size="small" />
             ) : (
               <Image
                 source={tab.icon}
@@ -117,22 +108,5 @@ const styles = StyleSheet.create({
   },
   iconActive: {
     tintColor: "#fff",
-  },
-  profilePic: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-  },
-  initialsCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#93C5FD", // azul claro
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  initialsText: {
-    color: "#0F172A",
-    fontWeight: "700",
   },
 });

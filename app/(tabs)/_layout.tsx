@@ -1,59 +1,23 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Slot, useFocusEffect } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
-import { getProfile } from "../../service/authService";
+import React, { useCallback } from "react";
 import BottomNavbar from "../components/navbar/navbar";
+import { useProfilePhoto } from "../hooks/useProfilePhoto";
 
 export default function TabsLayout() {
-  const [userPhoto, setUserPhoto] = useState<string | undefined>(undefined);
-  const [userName, setUserName] = useState<string | undefined>(undefined);
+  const { photo, name, loadPhotoFromServer } = useProfilePhoto();
 
-  const loadFromProfile = useCallback(async () => {
-    try {
-      const res = await getProfile();
-      const profile = res?.data || res?.user || res || null;
-      const p = profile?.foto_perfil_url || profile?.foto || undefined;
-      // Prefer a locally-stored optimistic foto if present (avoids navbar desync)
-      try {
-        const f = await AsyncStorage.getItem('foto');
-        if (f) {
-          setUserPhoto(f);
-        } else {
-          setUserPhoto(p ? `${String(p)}?t=${Date.now()}` : undefined);
-        }
-      } catch (e) {
-        setUserPhoto(p ? `${String(p)}?t=${Date.now()}` : undefined);
-      }
-      setUserName(profile?.nome || profile?.name || undefined);
-    } catch (err: any) {
-      console.log("TabsLayout: getProfile failed:", err?.message || err);
-      try {
-        const f = await AsyncStorage.getItem('foto');
-        if (f) setUserPhoto(f);
-      } catch (e) {
-        // ignore
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-    loadFromProfile();
-    return () => { mounted = false; };
-  }, [loadFromProfile]);
-
-  // Recarrega foto quando a aba ganha foco
+  // Recarrega foto quando qualquer aba ganha foco
   useFocusEffect(
     useCallback(() => {
-      loadFromProfile();
+      loadPhotoFromServer();
       return () => {};
-    }, [loadFromProfile])
+    }, [loadPhotoFromServer])
   );
 
   return (
     <>
       <Slot />
-      <BottomNavbar userPhoto={userPhoto} userName={userName} />
+      <BottomNavbar userPhoto={photo ?? undefined} userName={name ?? undefined} />
     </>
   );
 }

@@ -11,10 +11,9 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { getProfile } from "../../service/authService";
-import { exportUserPdf } from "../../service/reportService";
 import FeatureCard from "../components/cards/card1";
 import InfoCard from "../components/cards/card2";
+import { useProfilePhoto } from "../hooks/useProfilePhoto";
 
 const { width, height } = Dimensions.get("window");
 
@@ -24,9 +23,10 @@ const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julh
 
 export default function Dashboard() {
   const router = useRouter();
+  const { photo: fotoFromHook, loadPhotoFromServer } = useProfilePhoto();
   const [done, setDone] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [foto, setFoto] = useState<string | undefined>(undefined);
+  const [foto, setFoto] = useState<string | undefined>(fotoFromHook ?? undefined);
 
   // Adiciona estado para data atual do sistema
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -44,20 +44,12 @@ export default function Dashboard() {
       let active = true;
       (async () => {
         try {
-          // Atualiza avatar pelo backend primeiro
-          try {
-            const res = await getProfile();
-            const profile = res?.data || res?.user || res || null;
-            const serverFoto = profile?.foto_perfil_url || profile?.foto || null;
-            if (serverFoto && active) {
-              const busted = `${String(serverFoto)}?t=${Date.now()}`;
-              setFoto(busted);
-            } else if (active) {
-              setFoto(undefined);
+          // Atualiza avatar pelo hook
+          loadPhotoFromServer().then((photoUrl) => {
+            if (active) {
+              setFoto(photoUrl ?? undefined);
             }
-          } catch {
-            if (active) setFoto(undefined);
-          }
+          });
 
           const last = await AsyncStorage.getItem("diario_last_done");
           const showFlag = await AsyncStorage.getItem("diario_show_modal");
@@ -78,7 +70,7 @@ export default function Dashboard() {
       return () => {
         active = false;
       };
-    }, [])
+    }, [loadPhotoFromServer])
   );
 
   const handleCardPress = () => {

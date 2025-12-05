@@ -1,17 +1,17 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from 'react';
 import {
-  Alert, Dimensions,
-  Image,
-  Pressable, StyleSheet, Text,
-  TouchableOpacity, View
+    Alert, Dimensions,
+    Image,
+    Pressable, StyleSheet, Text,
+    TouchableOpacity, View
 } from 'react-native';
 import { setupInterceptors } from '../../service/api';
 import { getProfile } from '../../service/authService';
 import { saveProfilePhoto, uploadImageToCloudinary } from '../../service/profileService';
 import ButtonBase from "../components/common/button/button";
+import { useProfilePhoto } from '../hooks/useProfilePhoto';
 
 const { width, height } = Dimensions.get("window");
 const AVATAR_SIZE = width * 0.482;
@@ -22,6 +22,7 @@ setupInterceptors(null);
 
 export default function Perfil() {
   const router = useRouter();
+  const { updatePhoto } = useProfilePhoto();
   const [localUri, setLocalUri] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -82,23 +83,21 @@ export default function Perfil() {
       // Envia para backend salvar no usuário
       await saveProfilePhoto(String(imageUrl));
 
-      // Save locally as an optimistic fallback so profile shows the new image
-      try {
-        const busted = `${String(imageUrl)}?t=${Date.now()}`;
-        await AsyncStorage.setItem('foto', busted);
-        setLocalUri(busted);
-      } catch {}
+      // Atualiza o contexto global com a nova foto
+      await updatePhoto(imageUrl);
 
-      // Refetch perfil para garantir persistência e sincronização imediata (sem storage)
+      // Refetch perfil para garantir persistência e sincronização imediata
       try {
         const res = await getProfile();
         const profile = res?.data || res?.user || res || null;
         const serverFoto = profile?.foto_perfil_url || profile?.foto || imageUrl;
         const finalUrl = String(serverFoto || imageUrl) + `?t=${Date.now()}`;
         setLocalUri(finalUrl);
+        await updatePhoto(finalUrl);
       } catch {
         const busted = `${imageUrl}?t=${Date.now()}`;
         setLocalUri(busted);
+        await updatePhoto(busted);
       }
 
       Alert.alert('Sucesso', 'Foto atualizada com sucesso!');
