@@ -1,14 +1,20 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AppState, AppStateStatus } from "react-native";
 import { getProfile } from "../../service/authService";
 
 const PHOTO_CACHE_KEY = "profile_photo_url";
 const NAME_CACHE_KEY = "profile_name";
 
+// Armazena listeners globais para sincronização entre hooks
+let photoListeners: Set<(photo: string | null, name: string | null) => void> = new Set();
+
 export function useProfilePhoto() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [name, setName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const appState = useRef(AppState.currentState);
+  const subscription = useRef<any>(null);
 
   // Carrega foto do servidor e atualiza cache
   const loadPhotoFromServer = useCallback(async () => {
@@ -22,15 +28,19 @@ export function useProfilePhoto() {
         if (serverPhoto) {
           const busted = `${String(serverPhoto)}?t=${Date.now()}`;
           setPhoto(busted);
+          setName(serverName ? String(serverName) : null);
           await AsyncStorage.setItem(PHOTO_CACHE_KEY, busted);
           if (serverName) {
-            setName(String(serverName));
             await AsyncStorage.setItem(NAME_CACHE_KEY, String(serverName));
           }
+          // Notifica todos os listeners
+          photoListeners.forEach(listener => listener(busted, serverName ? String(serverName) : null));
           return busted;
         } else {
           setPhoto(null);
+          setName(null);
           await AsyncStorage.removeItem(PHOTO_CACHE_KEY);
+          photoListeners.forEach(listener => listener(null, null));
           return null;
         }
       }
@@ -45,8 +55,11 @@ export function useProfilePhoto() {
     try {
       const cachedPhoto = await AsyncStorage.getItem(PHOTO_CACHE_KEY);
       const cachedName = await AsyncStorage.getItem(NAME_CACHE_KEY);
-      if (cachedPhoto) setPhoto(cachedPhoto);
-      if (cachedName) setName(cachedName);
+      if (cachedPhoto) {
+        setPhoto(cachedPhoto);
+        setName(cachedName);
+        photoListeners.forEach(listener => listener(cachedPhoto, cachedName));
+      }
       return cachedPhoto;
     } catch (error) {
       console.log("useProfilePhoto: Failed to load from cache:", error);
@@ -54,7 +67,31 @@ export function useProfilePhoto() {
     return null;
   }, []);
 
-  // Inicializa: tenta cache, depois servidor
+  // Monitora mudanças no cache do AsyncStorage
+  const monitorCacheChanges = useCallback(() => {
+    const checkForUpdates = async () => {
+      try {
+        const newPhoto = await AsyncStorage.getItem(PHOTO_CACHE_KEY);
+        const newName = await AsyncStorage.getItem(NAME_CACHE_KEY);
+        
+        setPhoto((prevPhoto) => {
+          if (newPhoto !== prevPhoto) {
+            setName(newName);
+            photoListeners.forEach(listener => listener(newPhoto, newName));
+            return newPhoto;
+          }
+          return prevPhoto;
+        });
+      } catch (error) {
+        console.log("Error monitoring cache:", error);
+      }
+    };
+
+    const interval = setInterval(checkForUpdates, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Inicializa e monitora
   useEffect(() => {
     let mounted = true;
 
@@ -62,7 +99,7 @@ export function useProfilePhoto() {
       setLoading(true);
       // Primeiro tenta cache
       await loadPhotoFromCache();
-      // Depois carrega do servidor (com ou sem cache)
+      // Depois carrega do servidor
       if (mounted) {
         await loadPhotoFromServer();
         setLoading(false);
@@ -70,8 +107,40 @@ export function useProfilePhoto() {
     };
 
     init();
+
+    // Monitora mudanças no app state (quando volta para foreground)
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (appState.current.match(/inactive|background/) && nextAppState === "active") {
+        // App está retornando para foreground
+        loadPhotoFromServer();
+      }
+      appState.current = nextAppState;
+    };
+
+    subscription.current = AppState.addEventListener("change", handleAppStateChange);
+
     return () => {
       mounted = false;
+      if (subscription.current) {
+        subscription.current.remove();
+      }
+    };
+  }, []);
+
+  // Monitora cache a cada 500ms
+  useEffect(() => {
+    return monitorCacheChanges();
+  }, [monitorCacheChanges]);
+
+  // Registra este hook como listener
+  useEffect(() => {
+    const listener = (newPhoto: string | null, newName: string | null) => {
+      setPhoto(newPhoto);
+      setName(newName);
+    };
+    photoListeners.add(listener);
+    return () => {
+      photoListeners.delete(listener);
     };
   }, []);
 
@@ -81,11 +150,13 @@ export function useProfilePhoto() {
       const busted = `${String(newPhotoUrl)}?t=${Date.now()}`;
       setPhoto(busted);
       await AsyncStorage.setItem(PHOTO_CACHE_KEY, busted);
+      photoListeners.forEach(listener => listener(busted, name));
     } else {
       setPhoto(null);
       await AsyncStorage.removeItem(PHOTO_CACHE_KEY);
+      photoListeners.forEach(listener => listener(null, null));
     }
-  }, []);
+  }, [name]);
 
   // Função para limpar cache (logout)
   const clearPhoto = useCallback(async () => {
@@ -93,6 +164,7 @@ export function useProfilePhoto() {
     setName(null);
     await AsyncStorage.removeItem(PHOTO_CACHE_KEY);
     await AsyncStorage.removeItem(NAME_CACHE_KEY);
+    photoListeners.forEach(listener => listener(null, null));
   }, []);
 
   return {
