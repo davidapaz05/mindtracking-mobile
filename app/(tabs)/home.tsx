@@ -60,7 +60,7 @@ export default function Dashboard() {
             }
           }
         } catch (e) {
-          console.log("Erro ao ler estado diário:", e);
+
         }
       })();
 
@@ -148,7 +148,7 @@ export default function Dashboard() {
                   setShowModal(false);
                   await exportUserPdf();
                 } catch (err: any) {
-                  console.log("Exportar PDF erro:", err?.message || err);
+
                 }
               }}
             />

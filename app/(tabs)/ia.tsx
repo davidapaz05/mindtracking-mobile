@@ -22,7 +22,7 @@ const sendMessage = async (msg: string) => {
     });
 
     const data = await response.json();
-    console.log("Resposta da API:", data); // Para debugar
+
 
     if (data.success) {
       return data.response;

@@ -100,10 +100,9 @@ export default function Perfil() {
         await updatePhoto(busted);
       }
 
-      Alert.alert('Sucesso', 'Foto atualizada com sucesso!');
       router.replace('/(tabs)/perfil');
     } catch (error: any) {
-      console.log('Erro ao enviar foto:', error);
+
       Alert.alert('Erro', error?.message || 'Não foi possível enviar a foto');
       router.back();
     } finally {

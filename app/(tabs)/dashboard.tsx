@@ -82,10 +82,10 @@ export default function Dashboard() {
         if (data.success) {
           setHistorico(data.historico);
         } else {
-          console.warn("Falha ao carregar histórico:", data.message);
+          // Falha silenciosa
         }
       } catch (error) {
-        console.error("Erro ao buscar histórico:", error);
+        // Erro tratado silenciosamente
       }
     }
     fetchHistorico();
@@ -110,10 +110,10 @@ export default function Dashboard() {
         if (data.success) {
           setJaRespondido(data.ja_respondido);
         } else {
-          console.warn("Falha ao verificar questionário diário:", data.message);
+          // Falha silenciosa
         }
       } catch (error) {
-        console.error("Erro na verificação do questionário diário:", error);
+        // Erro tratado silenciosamente
       }
     }
     verificarQuestionarioDiario();
@@ -138,10 +138,10 @@ export default function Dashboard() {
         if (data.success && data.nota !== undefined) {
           setPontuacaoMedia(String(data.nota));
         } else {
-          console.warn("Falha ao carregar pontuação média.");
+          // Falha silenciosa
         }
       } catch (error) {
-        console.error("Erro ao buscar pontuação média:", error);
+        // Erro tratado silenciosamente
       }
     }
     fetchPontuacaoMedia();
@@ -170,7 +170,7 @@ export default function Dashboard() {
           }
         }
       } catch (error) {
-        console.error("Erro ao buscar dica:", error);
+
         setDicaAPI(textoPadraoRecomendacao);
       }
     }
@@ -201,11 +201,9 @@ export default function Dashboard() {
           }
         } else {
           const text = await response.text();
-          console.warn(`Resposta não OK: ${response.status} - ${text}`);
           setConversasTotal(0);
         }
       } catch (error) {
-        console.error("Erro ao buscar total conversas Athena:", error);
         setConversasTotal(0);
       }
     }
@@ -236,13 +234,9 @@ export default function Dashboard() {
             setCorrelacoes([]);
           }
         } else {
-          console.warn(
-            `Falha ao buscar correlações - status: ${response.status}`
-          );
           setCorrelacoes([]);
         }
       } catch (error) {
-        console.error("Erro ao buscar correlações:", error);
         setCorrelacoes([]);
       }
     }

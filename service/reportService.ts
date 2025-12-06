@@ -2,7 +2,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as WebBrowser from "expo-web-browser";
-import { Alert } from "react-native";
 import { ENV } from "../config/env";
 import { getProfile } from "./authService";
 
@@ -51,7 +50,7 @@ export async function exportUserPdf() {
       await WebBrowser.openBrowserAsync(url);
     }
   } catch (err: any) {
-    Alert.alert("Erro", err?.message || "Não foi possível exportar o PDF");
+
   }
 }
 

@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { ActivityIndicator, Alert, Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { login as loginService } from "../../service/loginService";
 import ButtonBase from "../components/common/button/button";
 import ButtonBase2 from "../components/common/button/button2";
@@ -17,7 +17,7 @@ export default function LoginScreen() {
 
 const handleLogin = async () => {
   if (!email || !senha) {
-    Alert.alert("Erro", "Por favor, preencha email e senha.");
+
     return;
   }
   setLoading(true);
@@ -25,7 +25,7 @@ const handleLogin = async () => {
     const response = await loginService(email, senha);
 
     if (!response.success) {
-      Alert.alert("Erro", response.message || "Erro ao fazer login");
+
       return;
     }
 
@@ -44,7 +44,7 @@ const handleLogin = async () => {
 
     router.push("/(tabs)/home");
  } catch (error: any) {
-  console.log("Erro no login:", error);
+
 
   const msg = error?.message || String(error);
   const normalized = msg.toLowerCase();
@@ -56,7 +56,7 @@ const handleLogin = async () => {
     router.push({ pathname: "/auth/confirm-code", params: { email } });
   } else {
     // Para todos os outros erros, mostrar alerta e permanecer na tela de login
-    Alert.alert("Erro", msg || "Erro ao fazer login");
+
   }
 } finally {
     setLoading(false);

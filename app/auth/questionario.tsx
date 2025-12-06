@@ -2,18 +2,17 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  Alert,
-  Animated,
-  Dimensions,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Animated,
+    Dimensions,
+    Image,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from "react-native";
 import {
-  fetchQuestions as fetchQuestionsService,
-  submitAnswers as submitAnswersService,
+    fetchQuestions as fetchQuestionsService,
+    submitAnswers as submitAnswersService,
 } from "../../service/questionarioService";
 
 const { width, height } = Dimensions.get("window");
@@ -90,7 +89,7 @@ export default function Questionnaire() {
             }
           }
         } catch (e) {
-          console.log("Erro ao recuperar usuario_id:", e);
+
         }
       }
       getUserId();
@@ -117,7 +116,7 @@ export default function Questionnaire() {
       try {
         const token = await AsyncStorage.getItem("token");
         if (!token && mode === "diario") {
-          console.log("Token não encontrado - redirecionando para login");
+
           if (mounted) setLoading(false);
           router.replace("/auth/login");
           return;
@@ -143,7 +142,7 @@ export default function Questionnaire() {
           }
         }
       } catch (e) {
-        console.log("Erro ao carregar perguntas:", e);
+
       } finally {
         if (mounted) setLoading(false);
       }
@@ -210,7 +209,7 @@ export default function Questionnaire() {
         err?.response?.data?.message ??
         err?.message ??
         "Não foi possível enviar suas respostas.";
-      Alert.alert("Erro", String(message));
+
     } finally {
       setSubmitting(false);
     }

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Alert } from "react-native";
 import InputBase from "./inputBase";
 
 type Props = {
@@ -56,7 +55,7 @@ export default function BirthDateInput({ value, onChange }: Props) {
   const handleBlur = () => {
     const current = value ?? birthDate;
     if (current.length === 10 && !validateAge(current)) {
-      Alert.alert("Idade inválida", "Você precisa ter pelo menos 12 anos.");
+
       if (onChange) onChange("");
       else setBirthDate("");
     }

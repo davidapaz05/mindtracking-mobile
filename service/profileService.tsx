@@ -41,7 +41,7 @@ export async function uploadImageToCloudinary(uri: string, options?: { uploadPre
     throw new Error('Cloudinary upload preset não configurado');
   }
 
-  console.log('Cloudinary upload: url=', url, 'preset=', uploadPreset, 'folder=', options?.folder);
+
   const resp = await fetch(url, {
     method: 'POST',
     body: formData as any,
@@ -56,7 +56,7 @@ export async function uploadImageToCloudinary(uri: string, options?: { uploadPre
   }
 
   const data = await resp.json();
-  console.log('Cloudinary upload success: secure_url=', data?.secure_url);
+
   return data;
 }
 
@@ -82,16 +82,16 @@ export async function saveProfilePhoto(photoUrl: string) {
         for (const key of keys) {
           try {
             const payload: any = { [key]: photoUrl };
-            console.log(`Attempting ${method.toUpperCase()} ${endpoint} with payload key=${key}`);
+
             const resp = await (api as any)[method](endpoint, payload, {
               headers: { 'Content-Type': 'application/json' },
             });
-            console.log('Backend save succeeded:', endpoint, method, key, 'status=', resp?.status);
+
             return resp.data;
           } catch (err: any) {
             lastErr = err;
             const status = err?.response?.status;
-            console.log(`Attempt failed: ${method.toUpperCase()} ${endpoint} key=${key} status=${status} message=${err?.message}`);
+
             // If 404/405 move to next endpoint; otherwise continue trying other combinations
             if (status === 404 || status === 405) break; // break keys loop, try next endpoint
             // continue trying other keys/methods
@@ -102,13 +102,13 @@ export async function saveProfilePhoto(photoUrl: string) {
     // If we reach here, all attempts failed
     if (lastErr) {
       const message = lastErr?.response?.data?.message || lastErr?.message || 'Erro ao salvar foto no servidor';
-      console.log('saveProfilePhoto final error:', message);
+
       throw new Error(message);
     }
     throw new Error('Não foi possível salvar a foto no servidor');
   } catch (err: any) {
     const message = err?.response?.data?.message || err?.message || 'Erro ao salvar foto no servidor';
-    console.log('saveProfilePhoto error (outer):', message);
+
     throw new Error(message);
   }
 }

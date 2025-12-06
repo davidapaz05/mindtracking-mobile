@@ -73,11 +73,11 @@ export default function RegisterScreen2() {
           telefone: telefoneSanitized,
         };
 
-        console.log("Payload enviado para registro:", JSON.stringify(payload, null, 2));
+
 
         const response = await registerService(payload);
 
-        console.log("Resposta registro:", response);
+
 
         if (response && (response.success || response.token)) {
           setError("");
@@ -93,10 +93,7 @@ export default function RegisterScreen2() {
           setError(response?.message || "Erro ao registrar");
         }
     } catch (error: any) {
-      console.log("Erro no registro (erro):", error);
-      console.log("Erro no registro (response.status):", error?.response?.status);
-      console.log("Erro no registro (response.headers):", error?.response?.headers);
-      console.log("Erro no registro (response.data):", error?.response?.data);
+
       // prefer server message when available
       setError(error?.response?.data?.message || error?.message || "Erro ao salvar perfil");
     } finally {

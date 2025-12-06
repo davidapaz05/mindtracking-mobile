@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { Alert, Dimensions, StyleSheet, Text, View } from "react-native";
+import { Dimensions, StyleSheet, Text, View } from "react-native";
 import { recoverPassword } from "../../service/passwordService";
 import ButtonBase from "../components/common/button/button";
 import InputBase from "../components/common/input/inputBase";
@@ -16,7 +16,7 @@ export default function Redefined1() {
 
   const handleSend = async () => {
     if (!email) {
-      Alert.alert("Erro", "Por favor, preencha o e-mail.");
+
       return;
     }
     setLoading(true);
@@ -25,11 +25,11 @@ export default function Redefined1() {
       if (resp && resp.success) {
         router.push({ pathname: "/auth/confirm-code", params: { email: String(email), from: "recover" } });
       } else {
-        Alert.alert("Erro", resp?.message || "Email não identificado");
+
       }
     } catch (err: any) {
-      console.log("recuperar-senha error:", err?.message || err);
-      Alert.alert("Erro", err?.message || "Email não identificado");
+
+
     } finally {
       setLoading(false);
     }

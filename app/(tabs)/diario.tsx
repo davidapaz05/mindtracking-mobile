@@ -1,7 +1,6 @@
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  Alert,
   Dimensions,
   FlatList,
   Image,
@@ -11,7 +10,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { getAllDiarios, getDiarioById, postDiario } from "../../service/diarioService";
 import CardDiario from "../components/cards/cardDiario";
@@ -36,6 +35,7 @@ export default function Diario() {
   const [modalAnaliseVisivel, setModalAnaliseVisivel] = useState(false);
   const [modalEscritaVisivel, setModalEscritaVisivel] = useState(false);
   const [modalJaEscritoVisivel, setModalJaEscritoVisivel] = useState(false);
+  const [modalSucessoVisivel, setModalSucessoVisivel] = useState(false);
   const [fabState, setFabState] = useState<"plus" | "done">("plus");
 
   const [selectedDiario, setSelectedDiario] = useState<DiarioItem | null>(null);
@@ -183,7 +183,6 @@ export default function Diario() {
   const onSalvarReflexao = useCallback(async () => {
     try {
       if (!tituloDiario.trim() || !textoDiario.trim()) {
-        Alert.alert("Erro", "Título e texto são obrigatórios");
         return;
       }
       const payload = { titulo: tituloDiario.trim(), texto: textoDiario };
@@ -195,13 +194,13 @@ export default function Diario() {
         // Atualiza estado do FAB para "done" pois diário foi criado agora
         setFabState("done");
       }
-      Alert.alert("Sucesso", resp?.message || "Diário enviado com sucesso");
       setModalEscritaVisivel(false);
       setTituloDiario("");
       setTextoDiario("");
+      setModalSucessoVisivel(true);
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || "Erro ao enviar diário";
-      Alert.alert("Erro ao enviar diário", msg);
+
     }
   }, [tituloDiario, textoDiario]);
 
@@ -386,6 +385,31 @@ export default function Diario() {
               activeOpacity={0.85}
             >
               <Text style={styles.btnJaEscritoText}>Entendido</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal 4 — Sucesso ao salvar */}
+      <Modal
+        visible={modalSucessoVisivel}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalSucessoVisivel(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalHeading}>Reflexão Salva!</Text>
+            <Text style={styles.modalBodyJaEscrito}>
+              Parabéns por dedicar um momento para si. Cada registro é um passo importante na sua jornada de autoconhecimento.
+            </Text>
+
+            <TouchableOpacity
+              style={styles.btnJaEscritoContainer}
+              onPress={() => setModalSucessoVisivel(false)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.btnJaEscritoText}>Fechar</Text>
             </TouchableOpacity>
           </View>
         </View>

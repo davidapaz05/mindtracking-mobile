@@ -1,4 +1,4 @@
-import { Alert, Dimensions, Image, StyleSheet, Text, View } from "react-native";
+import { Dimensions, Image, StyleSheet, Text, View } from "react-native";
 import Verification from "../components/common/input/inputCode";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -31,7 +31,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const resp = await verifyEmail(email, codigo);
-      console.log("verify resp:", resp);
+
       if (resp && resp.success) {
         if (resp && resp.success) {
   if (resp.token) {
@@ -68,7 +68,7 @@ export default function LoginScreen() {
         }
       }
     } catch (err: any) {
-      console.log("verify error:", err?.message || err);
+
       const from = String(params.from || "register");
       const errMsg = err?.message || "Erro ao verificar código";
       const alreadyVerified = /já verificado|ja verificado|already verified/i.test(String(errMsg));
@@ -96,7 +96,7 @@ export default function LoginScreen() {
       const email = String(params.email || (await AsyncStorage.getItem("email")) || "");
       if (!email) {
         if (mounted) {
-          Alert.alert("Erro", "Email não encontrado. Por favor, faça login novamente.");
+
           router.replace("/auth/login");
         }
         return;
@@ -107,21 +107,21 @@ export default function LoginScreen() {
       setSendingCode(true);
       try {
         const resp = await sendRecoveryCode(email);
-        console.log("recuperar-senha (change) resp:", resp);
+
         if (resp && resp.success) {
           if (mounted) {
             setCodeSent(true);
-            Alert.alert("Sucesso", resp.message || "Código enviado para seu e-mail.");
+
           }
         } else {
           if (mounted) {
-            Alert.alert("Erro", resp?.message || "Não foi possível enviar o código.");
+
           }
         }
       } catch (err: any) {
-        console.log("recuperar-senha (change) error:", err?.message || err);
+
         if (mounted) {
-          Alert.alert("Erro", err?.message || "Erro ao enviar código");
+
         }
       } finally {
         if (mounted) setSendingCode(false);

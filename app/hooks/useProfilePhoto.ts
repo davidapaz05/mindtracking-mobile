@@ -50,7 +50,6 @@ export function useProfilePhoto() {
         }
       }
     } catch (error) {
-      console.log("useProfilePhoto: Failed to load from server:", error);
     }
     return null;
   }, []);
@@ -67,7 +66,6 @@ export function useProfilePhoto() {
       }
       return cachedPhoto;
     } catch (error) {
-      console.log("useProfilePhoto: Failed to load from cache:", error);
     }
     return null;
   }, []);

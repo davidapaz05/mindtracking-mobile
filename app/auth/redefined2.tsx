@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
-import { Alert, Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { resetPassword } from "../../service/passwordService";
 import ButtonBase from "../components/common/button/button";
 import InputBase from "../components/common/input/inputBase"; // seu input já pronto
@@ -23,23 +23,23 @@ export default function LoginScreen() {
 
   const validateAndSubmit = async () => {
     if (!senha || !confirmSenha) {
-      Alert.alert("Erro", "Preencha todos os campos.");
+
       return;
     }
     if (senha !== confirmSenha) {
-      Alert.alert("Erro", "As senhas não coincidem.");
+
       return;
     }
     // optional: enforce a minimum length similar to registro1 (assumption: >= 6)
     if (senha.length < 6) {
-      Alert.alert("Erro", "A senha deve ter pelo menos 6 caracteres.");
+
       return;
     }
     setLoading(true);
     try {
       let emailToSend = (await AsyncStorage.getItem("email")) || emailParam || "";
       if (!emailToSend) {
-        Alert.alert("Erro", "Email não disponível. Volte e tente novamente.");
+
         setLoading(false);
         return;
       }
@@ -53,11 +53,11 @@ export default function LoginScreen() {
           router.replace("/auth/login");
         }
       } else {
-        Alert.alert("Erro", resp?.message || "Erro ao redefinir senha");
+
       }
     } catch (err: any) {
-      console.log("redefinir-senha error:", err?.message || err);
-      Alert.alert("Erro", err?.message || "Erro ao redefinir senha");
+
+
     } finally {
       setLoading(false);
     }

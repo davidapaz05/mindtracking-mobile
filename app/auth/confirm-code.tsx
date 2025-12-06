@@ -42,7 +42,7 @@ const handleVerify = async () => {
   setLoading(true);
   try {
     const resp = await verifyEmail(email, codigo);
-    console.log("verify resp:", resp);
+
    if (resp && resp.success) {
   // Salvar token
   if (resp.token) {
@@ -63,9 +63,9 @@ const handleVerify = async () => {
         if (senhaParam && email) {
           try {
             await loginService(email, senhaParam);
-            console.log("Autologin successful after verify");
+
           } catch (loginErr) {
-            console.log("Autologin failed after verify:", loginErr);
+
           }
         }
       }
@@ -93,7 +93,7 @@ const handleVerify = async () => {
       }
     }
   } catch (err: any) {
-    console.log("verify error:", err?.message || err);
+
     const from = String(params.from || "register");
     const errMsg = err?.message || "Erro ao verificar código";
     const alreadyVerified = isAlreadyVerifiedMsg(String(errMsg));
@@ -120,7 +120,7 @@ const handleVerify = async () => {
       const email = String(params.email || (await AsyncStorage.getItem("email")) || "");
       if (!email) {
         if (mounted) {
-          Alert.alert("Erro", "Email não encontrado. Por favor, faça login novamente.");
+
           router.replace("/auth/login");
         }
         return;
@@ -131,7 +131,7 @@ const handleVerify = async () => {
       setSendingCode(true);
       try {
         const resp = await sendRecoveryCode(email);
-        console.log("recuperar-senha (change) resp:", resp);
+
         if (resp && resp.success) {
           if (mounted) {
             setCodeSent(true);
@@ -143,7 +143,7 @@ const handleVerify = async () => {
           }
         }
       } catch (err: any) {
-        console.log("recuperar-senha (change) error:", err?.message || err);
+
         if (mounted) {
           Alert.alert("Erro", err?.message || "Erro ao enviar código");
         }

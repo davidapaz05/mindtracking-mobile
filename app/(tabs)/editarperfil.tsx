@@ -26,7 +26,7 @@ export default function EditarPerfilScreen() {
   const params = useLocalSearchParams();
   const { updatePhoto, loadPhotoFromServer } = useProfilePhoto();
 
-  console.log("Params vindos da tela 1:", params);
+
 
   const [nome, setNome] = useState("");
   const [dataNascimento, setDataNascimento] = useState("");
@@ -126,7 +126,7 @@ export default function EditarPerfilScreen() {
         setError(response?.message || "Erro ao salvar perfil");
       }
     } catch (err: any) {
-      console.log("Erro ao atualizar perfil:", err);
+
       setError(err?.response?.data?.message || err?.message || "Erro ao salvar perfil");
     } finally {
       setLoading(false);

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Alert, Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { exportUserPdf } from '../../../service/reportService';
 
 
@@ -421,7 +421,7 @@ export const ExportarJornadaCard: React.FC<ExportarJornadaCardProps> = ({
           try {
             await exportUserPdf();
           } catch (err: any) {
-            Alert.alert('Erro', err?.message || 'Não foi possível exportar o PDF');
+
           }
         }}
       >
