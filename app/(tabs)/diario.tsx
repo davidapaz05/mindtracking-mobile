@@ -35,6 +35,7 @@ export default function Diario() {
 
   const [modalAnaliseVisivel, setModalAnaliseVisivel] = useState(false);
   const [modalEscritaVisivel, setModalEscritaVisivel] = useState(false);
+  const [modalJaEscritoVisivel, setModalJaEscritoVisivel] = useState(false);
   const [fabState, setFabState] = useState<"plus" | "done">("plus");
 
   const [selectedDiario, setSelectedDiario] = useState<DiarioItem | null>(null);
@@ -167,12 +168,14 @@ export default function Diario() {
     setHeaderHeight((prev) => (prev !== h ? h : prev));
   }, []);
 
-  // Função clicando no FAB: só abre modal se estado "plus"
+  // Função clicando no FAB: só abre modal se estado "plus", senão abre modal de já escrito
   const onPressFab = useCallback(() => {
     if (fabState === "plus") {
       setTituloDiario("");
       setTextoDiario("");
       setModalEscritaVisivel(true);
+    } else if (fabState === "done") {
+      setModalJaEscritoVisivel(true);
     }
   }, [fabState]);
 
@@ -315,7 +318,7 @@ export default function Diario() {
               placeholder="Título do diário"
               placeholderTextColor="rgba(255,255,255,0.6)"
               style={styles.titleInput}
-              maxLength={20}
+              maxLength={15}
               numberOfLines={1}
             />
             <Text style={styles.modalBodyMuted}>Escreva livremente - somente você verá isso.</Text>
@@ -363,9 +366,34 @@ export default function Diario() {
         </View>
       </Modal>
 
+      {/* Modal 3 — Já foi escrito hoje */}
+      <Modal
+        visible={modalJaEscritoVisivel}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalJaEscritoVisivel(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalHeading}>Sua reflexão de hoje já foi registrada.</Text>
+            <Text style={styles.modalBodyJaEscrito}>
+              Para incentivar um registro focado, a significativo, nossa plataforma foi desenhada para um diário emocional por dia. Isso ajuda a consolidar os pensamentos importantes do seu dia.
+            </Text>
+
+            <TouchableOpacity
+              style={styles.btnJaEscritoContainer}
+              onPress={() => setModalJaEscritoVisivel(false)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.btnJaEscritoText}>Entendido</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* FAB fixo */}
       <View style={styles.fixedFabs} pointerEvents="box-none">
-        <TouchableOpacity onPress={onPressFab} activeOpacity={fabState === "plus" ? 0.9 : 0.4} disabled={fabState !== "plus"}>
+        <TouchableOpacity onPress={onPressFab} activeOpacity={0.8}>
           <Image
             source={
               fabState === "plus"
@@ -604,6 +632,27 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontFamily: "Inter_700Bold",
     fontSize: Math.max(width * 0.042, 15),
+  },
+  modalBodyJaEscrito: {
+    color: "#94A3B8",
+    fontFamily: "Inter_400Regular",
+    fontSize: Math.max(width * 0.038, 14),
+    lineHeight: 20,
+    marginVertical: height * 0.02,
+  },
+  btnJaEscritoContainer: {
+    backgroundColor: "#007c11ff",
+    paddingVertical: height * 0.012,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: height * 0.025,
+    paddingHorizontal: width * 0.08,
+  },
+  btnJaEscritoText: {
+    color: "#FFFFFF",
+    fontFamily: "Inter_700Bold",
+    fontSize: Math.max(width * 0.045, 16),
   },
   fixedFabs: {
     position: "absolute",
